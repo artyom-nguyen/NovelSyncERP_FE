@@ -52,7 +52,11 @@
                 <div class="icon-search">
                   <img src="/img-fix/icon/icon-topbar-search.svg" alt="" />
                 </div>
-                <input v-model="searchQuery" type="text" placeholder="Tìm kiếm mã đơn" />
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="Tìm kiếm mã đơn"
+                />
               </div>
             </div>
           </div>
@@ -172,7 +176,9 @@
                               </div>
                               <div
                                 class="imt-action"
-                                v-if="so.status === 'DRAFT' && canApproveSalesOrder"
+                                v-if="
+                                  so.status === 'DRAFT' && canApproveSalesOrder
+                                "
                               >
                                 <a
                                   href="javascript:;"
@@ -188,7 +194,10 @@
                               </div>
                               <div
                                 class="imt-action"
-                                v-if="so.status === 'APPROVED' && canHandleSalesDelivery"
+                                v-if="
+                                  so.status === 'APPROVED' &&
+                                  canHandleSalesDelivery
+                                "
                               >
                                 <a
                                   href="javascript:;"
@@ -204,7 +213,10 @@
                               </div>
                               <div
                                 class="imt-action"
-                                v-if="so.status === 'PROCESSING' && canHandleSalesDelivery"
+                                v-if="
+                                  so.status === 'PROCESSING' &&
+                                  canHandleSalesDelivery
+                                "
                               >
                                 <a
                                   href="javascript:;"
@@ -220,7 +232,10 @@
                               </div>
                               <div
                                 class="imt-action"
-                                v-if="so.status === 'PROCESSING' && canCreateSalesPayment"
+                                v-if="
+                                  so.status === 'PROCESSING' &&
+                                  canCreateSalesPayment
+                                "
                               >
                                 <a
                                   href="javascript:;"
@@ -247,7 +262,11 @@
                                       src="/img-fix/icon/icon-delete-popup.svg"
                                       alt=""
                                   /></span>
-                                  {{ so.status === 'DRAFT' ? 'Xóa đơn nháp' : 'Hủy đơn' }}
+                                  {{
+                                    so.status === "DRAFT"
+                                      ? "Xóa đơn nháp"
+                                      : "Hủy đơn"
+                                  }}
                                 </a>
                               </div>
                             </div>
@@ -277,7 +296,6 @@
       </div>
     </div>
 
-
     <TopbarFilterPopup
       v-model:open="isFilterPopupOpen"
       v-model="filters"
@@ -295,7 +313,9 @@
           <div class="main-export-file">
             <div class="title-export-file align-items-center">
               <div class="left">
-                <p class="text-size-14-medium">Xuất báo cáo sản phẩm bán chạy</p>
+                <p class="text-size-14-medium">
+                  Xuất báo cáo sản phẩm bán chạy
+                </p>
               </div>
               <div class="right">
                 <div class="icon-close-small" @click="closeExportPopup">
@@ -320,10 +340,7 @@
                       </option>
                     </select>
                     <span class="icon-select">
-                      <img
-                        src="/img-fix/icon/icon-arrow-down-new.svg"
-                        alt=""
-                      />
+                      <img src="/img-fix/icon/icon-arrow-down-new.svg" alt="" />
                     </span>
                   </div>
                 </div>
@@ -342,17 +359,14 @@
                       </option>
                     </select>
                     <span class="icon-select">
-                      <img
-                        src="/img-fix/icon/icon-arrow-down-new.svg"
-                        alt=""
-                      />
+                      <img src="/img-fix/icon/icon-arrow-down-new.svg" alt="" />
                     </span>
                   </div>
                 </div>
               </div>
               <p class="text-size-13-light opacity-6 mt-10">
-                File Excel gồm các cột: Mã sản phẩm, Tên sản phẩm, Tổng SL bán, Tổng
-                doanh thu.
+                File Excel gồm các cột: Mã sản phẩm, Tên sản phẩm, Tổng SL bán,
+                Tổng doanh thu.
               </p>
             </div>
             <div class="button-popup-content">
@@ -577,7 +591,9 @@
                                     v-model="item.productId"
                                     @change="onProductChange(item)"
                                   >
-                                    <option value="" disabled>Chọn sản phẩm</option>
+                                    <option value="" disabled>
+                                      Chọn sản phẩm
+                                    </option>
                                     <option
                                       v-for="product in filteredProducts"
                                       :key="product.id"
@@ -732,11 +748,15 @@
                       <div class="ct-label-new">
                         <div
                           class="label-table-new"
-                          :class="getSalesOrderStatusLabelClass(selectedOrder.status)"
+                          :class="
+                            getSalesOrderStatusLabelClass(selectedOrder.status)
+                          "
                         >
                           <p
                             class="text-size-13-medium"
-                            :class="getSalesOrderStatusTextClass(selectedOrder.status)"
+                            :class="
+                              getSalesOrderStatusTextClass(selectedOrder.status)
+                            "
                           >
                             {{ formatSalesOrderStatus(selectedOrder.status) }}
                           </p>
@@ -843,8 +863,7 @@
                               </p>
                               <p class="text-size-14-rgl">
                                 {{
-                                  getPartnerInfo(selectedOrder).address ||
-                                  "---"
+                                  getPartnerInfo(selectedOrder).address || "---"
                                 }}
                               </p>
                             </div>
@@ -1021,7 +1040,9 @@
               </div>
               <div
                 class="btn-create-group"
-                v-if="selectedOrder?.status === 'APPROVED' && canHandleSalesDelivery"
+                v-if="
+                  selectedOrder?.status === 'APPROVED' && canHandleSalesDelivery
+                "
               >
                 <a
                   href="javascript:;"
@@ -1033,7 +1054,10 @@
               </div>
               <div
                 class="btn-create-group"
-                v-if="selectedOrder?.status === 'PROCESSING' && canHandleSalesDelivery"
+                v-if="
+                  selectedOrder?.status === 'PROCESSING' &&
+                  canHandleSalesDelivery
+                "
               >
                 <a
                   href="javascript:;"
@@ -1045,7 +1069,10 @@
               </div>
               <div
                 class="btn-create-group"
-                v-if="selectedOrder?.status === 'PROCESSING' && canCreateSalesPayment"
+                v-if="
+                  selectedOrder?.status === 'PROCESSING' &&
+                  canCreateSalesPayment
+                "
               >
                 <a
                   href="javascript:;"
@@ -1187,7 +1214,9 @@ const salesOrderStatusTextClasses: Record<string, string> = {
 };
 
 const normalizeStatusKey = (status: string | null | undefined) =>
-  String(status || "").trim().toUpperCase();
+  String(status || "")
+    .trim()
+    .toUpperCase();
 
 const formatSalesOrderStatus = (status: string | null | undefined) =>
   salesOrderStatusLabels[normalizeStatusKey(status)] || "Không xác định";
@@ -1196,7 +1225,8 @@ const getSalesOrderStatusDotClass = (status: string | null | undefined) =>
   salesOrderStatusDotClasses[normalizeStatusKey(status)] || "d-red-txt";
 
 const getSalesOrderStatusLabelClass = (status: string | null | undefined) =>
-  salesOrderStatusLabelClasses[normalizeStatusKey(status)] || "bg-label-red-new";
+  salesOrderStatusLabelClasses[normalizeStatusKey(status)] ||
+  "bg-label-red-new";
 
 const getSalesOrderStatusTextClass = (status: string | null | undefined) =>
   salesOrderStatusTextClasses[normalizeStatusKey(status)] || "text-red";
@@ -1271,7 +1301,9 @@ const isInDateRange = (dateStr: string | null | undefined) => {
   const toTime = toDateValue(filters.value.createdTo);
   const endOfToDate = toTime ? toTime + 24 * 60 * 60 * 1000 - 1 : null;
 
-  return (!fromTime || time >= fromTime) && (!endOfToDate || time <= endOfToDate);
+  return (
+    (!fromTime || time >= fromTime) && (!endOfToDate || time <= endOfToDate)
+  );
 };
 
 const filteredSalesOrders = computed(() => {
@@ -1319,7 +1351,11 @@ const defaultForm = () => ({
 
 const formData = ref(defaultForm());
 const SALES_ORDER_PARTNER_STORAGE_KEY = "novelsync:sales-order-partners";
-const emptyPartnerInfo = (): PartnerInfo => ({ name: "", address: "", phone: "" });
+const emptyPartnerInfo = (): PartnerInfo => ({
+  name: "",
+  address: "",
+  phone: "",
+});
 
 const normalizePartnerInfo = (partner: PartnerInfo): PartnerInfo => ({
   name: partner.name.trim(),
@@ -1385,7 +1421,9 @@ const getPartnerInfo = (order: SalesOrder | null): PartnerInfo => {
   }
 
   const store = readPartnerStore();
-  const matchedKey = getPartnerStoreKeys(order).find((key) => key && store[key]);
+  const matchedKey = getPartnerStoreKeys(order).find(
+    (key) => key && store[key],
+  );
   return matchedKey ? store[matchedKey] : emptyPartnerInfo();
 };
 
@@ -1464,7 +1502,9 @@ const getReportErrorMessage = async (response: Response) => {
 };
 
 const exportTopSellingProducts = async () => {
-  toast.fromMessage("Backend hiện chưa cung cấp API xuất báo cáo sản phẩm bán chạy.");
+  toast.fromMessage(
+    "Backend hiện chưa cung cấp API xuất báo cáo sản phẩm bán chạy.",
+  );
   isExportPopupOpen.value = false;
 };
 
@@ -1495,7 +1535,9 @@ const removeItem = (index: number) => {
 };
 
 const onProductChange = (item: SalesOrderItem) => {
-  const product = products.value?.find((entry) => entry.id === Number(item.productId));
+  const product = products.value?.find(
+    (entry) => entry.id === Number(item.productId),
+  );
   if (product) {
     item.price = product.basePrice || 0;
   }
@@ -1641,11 +1683,10 @@ const openDetailPopup = async (id: number) => {
     return;
   }
 
-  const matchedLines = (soData.value.salesOrderLines && soData.value.salesOrderLines.length > 0)
-    ? soData.value.salesOrderLines
-    : (linesData.value || []).filter(
-    (line) => line.salesOrder?.id === id,
-  );
+  const matchedLines =
+    soData.value.salesOrderLines && soData.value.salesOrderLines.length > 0
+      ? soData.value.salesOrderLines
+      : (linesData.value || []).filter((line) => line.salesOrder?.id === id);
 
   selectedOrder.value = {
     ...soData.value,
@@ -1676,10 +1717,9 @@ const handleApproveOrder = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error: completeError } = await useAPI(
-    `/sales-orders/${id}/approve`,
-    { method: "PUT" },
-  );
+  const { error: completeError } = await useAPI(`/sales-orders/${id}/approve`, {
+    method: "PUT",
+  });
 
   if (completeError.value) {
     const backEndMsg =
@@ -1699,8 +1739,7 @@ const handleApproveOrder = async (id: number) => {
 const handleStartDelivery = async (id: number) => {
   const isConfirm = await confirm({
     confirmText: "Bắt đầu giao",
-    message:
-      "Bạn có chắc chắn muốn chuyển đơn này sang trạng thái đang giao?",
+    message: "Bạn có chắc chắn muốn chuyển đơn này sang trạng thái đang giao?",
     title: "Bắt đầu giao hàng",
     tone: "warning",
   });
@@ -1728,8 +1767,7 @@ const handleStartDelivery = async (id: number) => {
 const handleConfirmDelivery = async (id: number) => {
   const isConfirm = await confirm({
     confirmText: "Xác nhận",
-    message:
-      "Bạn có chắc chắn muốn xác nhận đơn hàng đã giao tới khách?",
+    message: "Bạn có chắc chắn muốn xác nhận đơn hàng đã giao tới khách?",
     title: "Xác nhận giao hàng",
     tone: "warning",
   });
@@ -1802,7 +1840,11 @@ const handleDeleteOrder = async (id: number) => {
 };
 
 const formatCurrency = (amount: number | null | undefined) => {
-  if (amount == null) return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(0);
+  if (amount == null)
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(0);
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
@@ -1832,8 +1874,3 @@ const formatFullDate = (dateStr: string | null | undefined) => {
   }).format(date);
 };
 </script>
-
-
-
-
-

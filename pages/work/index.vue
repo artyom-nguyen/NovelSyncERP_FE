@@ -10,7 +10,7 @@
             alt=""
           />
           <p class="permission-state-desc">
-            Tài khoản của bạn hiện chưa được cấp quyền sử dụng module nào.
+            Tài khoản của bạn hiện chưa được cấp quyền sử dụng module này.
           </p>
           <div class="permission-state-support">
             <p>Cần hỗ trợ?</p>

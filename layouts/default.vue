@@ -387,6 +387,7 @@
                     </div>
                     <div class="nav-child-lv1">
                       <NuxtLink
+                        v-if="hasAnyRole(purchaseRoles)"
                         to="/purchase-orders"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -397,6 +398,7 @@
                         <div class="text">Đơn nhập hàng</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(transferRoles)"
                         to="/transfer-orders"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -407,6 +409,7 @@
                         <div class="text">Đơn điều chuyển</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(adminManagerRoles)"
                         to="/warehouses"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -417,6 +420,7 @@
                         <div class="text">Kho hàng</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(inventoryRoles)"
                         to="/inventory-balances"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -427,6 +431,7 @@
                         <div class="text">Số dư tồn kho</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(inventoryRoles)"
                         to="/inventory-transactions"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -469,6 +474,7 @@
                     </div>
                     <div class="nav-child-lv1">
                       <NuxtLink
+                        v-if="hasAnyRole(catalogRoles)"
                         to="/products"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -479,6 +485,7 @@
                         <div class="text">Sản phẩm</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(catalogRoles)"
                         to="/product-categories"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -489,6 +496,7 @@
                         <div class="text">Nhóm sản phẩm</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(catalogRoles)"
                         to="/suppliers"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -529,7 +537,7 @@
                   </div>
 
                   <div
-                    v-if="hasAnyRole(['ROLE_ADMIN'])"
+                    v-if="hasAnyRole(adminManagerRoles)"
                     class="item-nav-group-child"
                     :class="{ 'open-nav-child': openNav === 'quan-tri' }"
                   >
@@ -544,6 +552,7 @@
                     </div>
                     <div class="nav-child-lv1">
                       <NuxtLink
+                        v-if="hasAnyRole(['ROLE_ADMIN'])"
                         to="/users"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -554,6 +563,7 @@
                         <div class="text">Tài khoản</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(adminManagerRoles)"
                         to="/employees"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -564,6 +574,7 @@
                         <div class="text">Nhân viên</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(adminManagerRoles)"
                         to="/departments"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -962,38 +973,15 @@ interface WorkNavGroup {
   items: NavItem[];
 }
 
-const salesRoles = [
-  "ROLE_ADMIN",
-  "ROLE_SALES",
-  "ROLE_MANAGER",
-  "ROLE_ACCOUNTANT",
-];
-const purchaseRoles = [
-  "ROLE_ADMIN",
-  "ROLE_PURCHASER",
-  "ROLE_MANAGER",
-  "ROLE_ACCOUNTANT",
-];
-const transferRoles = [
-  "ROLE_ADMIN",
-  "ROLE_WAREHOUSE",
-  "ROLE_MANAGER",
-  "ROLE_SHIPPER",
-];
-const inventoryRoles = [
-  "ROLE_ADMIN",
-  "ROLE_WAREHOUSE",
-  "ROLE_MANAGER",
-  "ROLE_ACCOUNTANT",
-];
-const catalogRoles = [
-  "ROLE_ADMIN",
-  "ROLE_PURCHASER",
-  "ROLE_WAREHOUSE",
-  "ROLE_MANAGER",
-];
-const financeRoles = ["ROLE_ADMIN", "ROLE_ACCOUNTANT"];
-const adminManagerRoles = ["ROLE_ADMIN", "ROLE_MANAGER"];
+const {
+  adminManagerRoles,
+  catalogRoles,
+  financeRoles,
+  inventoryRoles,
+  purchaseRoles,
+  salesRoles,
+  transferRoles,
+} = useRoutePermissions();
 
 const workNavGroups: WorkNavGroup[] = [
   {
