@@ -1248,30 +1248,26 @@ const { data: salesOrders, refresh: refreshOrders } =
 const { data: account } = await useAPI<any>("/account");
 const { data: products } = await useAPI<any[]>("/products");
 const { data: warehouses } = await useAPI<any[]>("/warehouses");
+const { createRoleChecker, getActionRoles, getUserRoles } =
+  useRoutePermissions();
 
-const userRoles = computed(() => {
-  const authorities = account.value?.authorities || [];
-  const authority = account.value?.authority ? [account.value.authority] : [];
-  return [...new Set([...authorities, ...authority])];
-});
-
-const hasAnyRole = (requiredRoles: string[]) =>
-  requiredRoles.some((role) => userRoles.value.includes(role));
+const userRoles = computed(() => getUserRoles(account.value));
+const hasAnyRole = createRoleChecker(userRoles);
 
 const canCreateSalesOrder = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_SALES"]),
+  hasAnyRole(getActionRoles("salesOrders.create")),
 );
 const canApproveSalesOrder = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+  hasAnyRole(getActionRoles("salesOrders.approve")),
 );
 const canHandleSalesDelivery = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_SHIPPER"]),
+  hasAnyRole(getActionRoles("salesOrders.delivery")),
 );
 const canCreateSalesPayment = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_SHIPPER", "ROLE_ACCOUNTANT"]),
+  hasAnyRole(getActionRoles("salesOrders.payment")),
 );
 const canCancelSalesOrder = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+  hasAnyRole(getActionRoles("salesOrders.cancel")),
 );
 const canCancelSalesOrderStatus = (status: string) =>
   canCancelSalesOrder.value &&

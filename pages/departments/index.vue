@@ -314,10 +314,7 @@ const handleSubmitDepartment = async () => {
   isSubmitting.value = false;
 
   if (error.value) {
-    const errorData = error.value.data as any;
-    toast.fromMessage(
-      errorData?.message || errorData?.title || "Không thể lưu phòng ban",
-    );
+    toast.fromMessage(getApiErrorMessage(error.value, "Không thể lưu phòng ban"));
     return;
   }
 
@@ -339,10 +336,7 @@ const handleDeleteDepartment = async (id: number) => {
   const { error } = await useAPI(`/departments/${id}`, { method: "DELETE" });
 
   if (error.value) {
-    const errorData = error.value.data as any;
-    toast.fromMessage(
-      errorData?.message || errorData?.title || "Không thể xóa phòng ban",
-    );
+    toast.fromMessage(getApiErrorMessage(error.value, "Không thể xóa phòng ban"));
     return;
   }
 

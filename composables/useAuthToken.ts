@@ -1,16 +1,17 @@
 const AUTH_TOKEN_COOKIE_NAME = "auth_token";
 const AUTH_TOKEN_STORAGE_KEY = "novel_auth_token";
 
-const authTokenCookieOptions = {
+const getAuthTokenCookieOptions = () => ({
   maxAge: 60 * 60 * 24 * 7,
+  secure: process.client ? window.location.protocol === "https:" : undefined,
   sameSite: "lax" as const,
   path: "/",
-};
+});
 
 export const useAuthToken = () => {
   const token = useCookie<string | null>(
     AUTH_TOKEN_COOKIE_NAME,
-    authTokenCookieOptions,
+    getAuthTokenCookieOptions(),
   );
 
   const syncFromStorage = () => {
@@ -19,6 +20,9 @@ export const useAuthToken = () => {
     const storedToken = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
     if (!token.value && storedToken) {
       token.value = storedToken;
+    }
+    if (storedToken) {
+      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
     }
 
     return token.value;
@@ -29,9 +33,7 @@ export const useAuthToken = () => {
 
     if (!process.client) return;
 
-    if (value) {
-      localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, value);
-    } else {
+    if (!value) {
       localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
     }
   };
@@ -40,8 +42,8 @@ export const useAuthToken = () => {
     setToken(null);
   };
 
-  if (process.client && token.value) {
-    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token.value);
+  if (process.client) {
+    syncFromStorage();
   }
 
   return {

@@ -361,15 +361,7 @@
                   </div>
 
                   <div
-                    v-if="
-                      hasAnyRole([
-                        'ROLE_ADMIN',
-                        'ROLE_PURCHASER',
-                        'ROLE_WAREHOUSE',
-                        'ROLE_MANAGER',
-                        'ROLE_ACCOUNTANT',
-                      ])
-                    "
+                    v-if="hasAnyRole(supplyChainRoles)"
                     class="item-nav-group-child"
                     :class="{ 'open-nav-child': openNav === 'chuoi-cung-ung' }"
                   >
@@ -447,14 +439,7 @@
                   </div>
 
                   <div
-                    v-if="
-                      hasAnyRole([
-                        'ROLE_ADMIN',
-                        'ROLE_PURCHASER',
-                        'ROLE_WAREHOUSE',
-                        'ROLE_MANAGER',
-                      ])
-                    "
+                    v-if="hasAnyRole(productPartnerRoles)"
                     class="item-nav-group-child"
                     :class="{
                       'open-nav-child': openNav === 'san-pham-doi-tac',
@@ -552,7 +537,7 @@
                     </div>
                     <div class="nav-child-lv1">
                       <NuxtLink
-                        v-if="hasAnyRole(['ROLE_ADMIN'])"
+                        v-if="hasAnyRole(adminOnlyRoles)"
                         to="/users"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -838,13 +823,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
-
-import { Client } from "@stomp/stompjs";
 const route = useRoute();
 const router = useRouter();
-const config = useRuntimeConfig();
-const toast = useToast();
+const {
+  account,
+  authToken,
+  avatarUrl,
+  clearToken,
+  fullName,
+  hasAnyRole,
+  isAdminAccount,
+  loadAccount,
+  primaryRole,
+  refreshAccount,
+  userInitials,
+} = useAccountSession();
+
+const {
+  closeNotificationBox,
+  formatDateTime,
+  isOpenNotificationBox,
+  markAllAsRead,
+  markAsRead,
+  notificationSummaryText,
+  notifications,
+  toggleNotificationBox: toggleNotificationBoxBase,
+  unreadCount,
+} = await useNotifications();
+
+if (!authToken.value && process.client) {
+  await navigateTo("/");
+}
+
+if (authToken.value) {
+  await loadAccount();
+}
 
 const isOpenUserBox = ref(false);
 const toggleUserBox = () => {
@@ -853,6 +866,10 @@ const toggleUserBox = () => {
 };
 const closeUserBox = () => {
   isOpenUserBox.value = false;
+};
+const toggleNotificationBox = async () => {
+  isOpenUserBox.value = false;
+  await toggleNotificationBoxBase();
 };
 
 const closeSidebarMenu = () => {
@@ -915,50 +932,6 @@ const toggleNav = (navId: string) => {
   openNav.value = openNav.value === navId ? null : navId;
 };
 
-interface Account {
-  id: number;
-  login: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string;
-  imageUrl: string | null;
-  phone?: string | null;
-  langKey?: string | null;
-  activated?: boolean;
-  status?: string;
-  authority?: string;
-  authorities?: string[];
-}
-const { clearToken, syncFromStorage, token: authToken } = useAuthToken();
-
-if (process.client) {
-  syncFromStorage();
-}
-
-if (!authToken.value && process.client) {
-  await navigateTo("/");
-}
-
-const account = ref<Account | null>(null);
-
-if (authToken.value) {
-  const { data: accountData } = await useAPI<Account>("/account");
-  account.value = (accountData.value as Account | null | undefined) || null;
-}
-
-const userRoles = computed(() => {
-  const authorities = account.value?.authorities || [];
-  const authority = account.value?.authority ? [account.value.authority] : [];
-  return [...new Set([...authorities, ...authority])];
-});
-
-const hasAnyRole = (allowedRoles: string[]) => {
-  if (!allowedRoles.length) return true;
-  if (!userRoles.value.length) return false;
-  if (userRoles.value.includes("ROLE_ADMIN")) return true;
-  return allowedRoles.some((role) => userRoles.value.includes(role));
-};
-
 interface NavItem {
   label: string;
   to: string;
@@ -977,11 +950,17 @@ const {
   adminManagerRoles,
   catalogRoles,
   financeRoles,
+  getActionRoles,
   inventoryRoles,
   purchaseRoles,
   salesRoles,
   transferRoles,
 } = useRoutePermissions();
+const adminOnlyRoles = getActionRoles("admin.users");
+const supplyChainRoles = [
+  ...new Set([...purchaseRoles, ...inventoryRoles, ...transferRoles]),
+];
+const productPartnerRoles = catalogRoles;
 
 const workNavGroups: WorkNavGroup[] = [
   {
@@ -1004,7 +983,7 @@ const workNavGroups: WorkNavGroup[] = [
   {
     id: "chuoi-cung-ung",
     label: "Chuỗi cung ứng",
-    roles: [...purchaseRoles, ...inventoryRoles, ...transferRoles],
+    roles: supplyChainRoles,
     items: [
       {
         label: "Đơn nhập hàng",
@@ -1171,533 +1150,44 @@ const closeMobileMenu = () => {
   }
 };
 
-const fullName = computed(() => {
-  if (!account.value) return "User";
-  const first = account.value.firstName || "";
-  const last = account.value.lastName || "";
-  const full = `${last} ${first}`.trim();
-  return full || account.value.login;
+const {
+  closeChangePasswordPopup,
+  closeProfilePopup,
+  handleProfilePhoneInput,
+  isChangePasswordPopupOpen,
+  isChangingPwd,
+  isProfilePopupOpen,
+  isSavingProfile,
+  openChangePasswordPopup,
+  openProfilePopup,
+  profileError,
+  profileForm,
+  profilePreviewAvatar,
+  profilePreviewInitials,
+  profilePreviewName,
+  pwdError,
+  pwdForm,
+  submitChangePassword,
+  submitProfile,
+} = useProfileSettings({
+  account,
+  avatarUrl,
+  closeUserBox,
+  fullName,
+  isAdminAccount,
+  refreshAccount,
 });
-
-const getInitials = (name: string) => {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  const source = words.length > 1 ? [words[0], words[words.length - 1]] : words;
-  return (
-    source
-      .map((word) => word.charAt(0))
-      .join("")
-      .toUpperCase() || "NS"
-  );
-};
-
-const userInitials = computed(() => getInitials(fullName.value));
-
-const primaryRole = computed(() => {
-  if (!userRoles.value.length) return "Chưa phân quyền";
-  const roles: Record<string, string> = {
-    ROLE_ADMIN: "Admin",
-    ROLE_USER: "User",
-    ROLE_WAREHOUSE: "Thủ kho",
-    ROLE_PURCHASER: "Nhân viên mua hàng",
-    ROLE_SALES: "Sales",
-    ROLE_MANAGER: "Quản lý",
-    ROLE_ACCOUNTANT: "Kế toán",
-  };
-  const primary =
-    userRoles.value.find((role) => role !== "ROLE_USER") || userRoles.value[0];
-  return roles[primary] || primary;
-});
-
-const isAdminAccount = computed(() => userRoles.value.includes("ROLE_ADMIN"));
-
-const avatarUrl = computed(() => account.value?.imageUrl?.trim() || "");
-
-const emptyProfileForm = () => ({
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  imageUrl: "",
-  langKey: "vi",
-});
-
-const trimOrNull = (value: string) => {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-};
-
-const isProfilePopupOpen = ref(false);
-const isSavingProfile = ref(false);
-const profileError = ref("");
-const profileForm = ref(emptyProfileForm());
-const profilePreviewAvatar = computed(
-  () => profileForm.value.imageUrl.trim() || avatarUrl.value,
-);
-const profilePreviewName = computed(() => {
-  const first = profileForm.value.firstName.trim();
-  const last = profileForm.value.lastName.trim();
-  return `${last} ${first}`.trim() || fullName.value;
-});
-const profilePreviewInitials = computed(() =>
-  getInitials(profilePreviewName.value),
-);
-
-const fillProfileForm = () => {
-  profileForm.value = {
-    firstName: account.value?.firstName || "",
-    lastName: account.value?.lastName || "",
-    email: account.value?.email || "",
-    phone: account.value?.phone || "",
-    imageUrl: account.value?.imageUrl || "",
-    langKey: account.value?.langKey || "vi",
-  };
-};
-
-const handleProfilePhoneInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const phone = toDigitsOnly(target.value);
-  target.value = phone;
-  profileForm.value.phone = phone;
-};
-
-const openProfilePopup = () => {
-  isOpenUserBox.value = false;
-  profileError.value = "";
-  fillProfileForm();
-  isProfilePopupOpen.value = true;
-};
-
-const closeProfilePopup = () => {
-  isProfilePopupOpen.value = false;
-};
-
-const refreshAccount = async () => {
-  if (!authToken.value) return;
-  const freshAccount = await $fetch<Account>("/account", {
-    baseURL: config.public.apiBase,
-    headers: {
-      Authorization: `Bearer ${authToken.value}`,
-    },
-  });
-  account.value = freshAccount;
-};
-
-const getProfileErrorMessage = (error: any) => {
-  const message =
-    `${error?.data?.title || ""} ${error?.data?.detail || ""} ${error?.message || ""}`.toLowerCase();
-  if (message.includes("email")) {
-    return "Email này đã được sử dụng, vui lòng chọn email khác.";
-  }
-  return "Không thể cập nhật thông tin cá nhân. Vui lòng thử lại.";
-};
-
-const submitProfile = async () => {
-  if (!account.value || isSavingProfile.value) return;
-
-  profileError.value = "";
-  const validationError = firstValidationError([
-    validateMaxLength(profileForm.value.firstName, 50, "Tên"),
-    validateMaxLength(profileForm.value.lastName, 50, "Họ"),
-    !isAdminAccount.value && validateRequired(profileForm.value.email, "Email"),
-    !isAdminAccount.value && validateEmail(profileForm.value.email),
-    validateDigitsOnly(profileForm.value.phone, "Số điện thoại"),
-    validateMaxLength(profileForm.value.phone, 15, "Số điện thoại"),
-    validateMaxLength(profileForm.value.imageUrl, 256, "Ảnh đại diện"),
-    validateMinMaxLength(profileForm.value.langKey || "vi", 2, 10, "Ngôn ngữ"),
-  ]);
-
-  if (validationError) {
-    profileError.value = validationError;
-    return;
-  }
-
-  isSavingProfile.value = true;
-  try {
-    const { error } = await useAPI("/account", {
-      method: "POST",
-      body: {
-        ...account.value,
-        firstName: trimOrNull(profileForm.value.firstName),
-        lastName: trimOrNull(profileForm.value.lastName),
-        email: isAdminAccount.value
-          ? account.value.email
-          : profileForm.value.email.trim(),
-        imageUrl: trimOrNull(profileForm.value.imageUrl),
-        phone: trimOrNull(profileForm.value.phone),
-        langKey: profileForm.value.langKey.trim() || "vi",
-      },
-    });
-
-    if (error.value) {
-      profileError.value = getProfileErrorMessage(error.value);
-      toast.error(profileError.value);
-      return;
-    }
-
-    await refreshAccount();
-    closeProfilePopup();
-    toast.success("Cập nhật thông tin cá nhân thành công.");
-  } catch (err: any) {
-    profileError.value = getProfileErrorMessage(err);
-    toast.error(profileError.value);
-  } finally {
-    isSavingProfile.value = false;
-  }
-};
-
-const isChangePasswordPopupOpen = ref(false);
-const isChangingPwd = ref(false);
-const pwdError = ref("");
-const pwdForm = ref({
-  currentPassword: "",
-  newPassword: "",
-  confirmNewPassword: "",
-});
-
-const openChangePasswordPopup = () => {
-  isOpenUserBox.value = false;
-  pwdForm.value = {
-    currentPassword: "",
-    newPassword: "",
-    confirmNewPassword: "",
-  };
-  pwdError.value = "";
-  isChangePasswordPopupOpen.value = true;
-};
-
-const closeChangePasswordPopup = () => {
-  isChangePasswordPopupOpen.value = false;
-};
-
-const submitChangePassword = async () => {
-  pwdError.value = "";
-
-  const validationError = firstValidationError([
-    validateRequired(pwdForm.value.currentPassword, "Mật khẩu hiện tại"),
-    validatePasswordLength(pwdForm.value.newPassword, "Mật khẩu mới"),
-    validateRequired(pwdForm.value.confirmNewPassword, "Xác nhận mật khẩu mới"),
-  ]);
-
-  if (validationError) {
-    pwdError.value = validationError;
-    return;
-  }
-
-  if (
-    !pwdForm.value.currentPassword ||
-    !pwdForm.value.newPassword ||
-    !pwdForm.value.confirmNewPassword
-  ) {
-    pwdError.value = "Vui lòng nhập đầy đủ thông tin.";
-    return;
-  }
-  if (pwdForm.value.newPassword !== pwdForm.value.confirmNewPassword) {
-    pwdError.value = "Mật khẩu xác nhận không khớp.";
-    return;
-  }
-
-  isChangingPwd.value = true;
-  try {
-    const { error } = await useAPI("/account/change-password", {
-      method: "POST",
-      body: {
-        currentPassword: pwdForm.value.currentPassword,
-        newPassword: pwdForm.value.newPassword,
-      },
-    });
-
-    if (error.value) {
-      pwdError.value =
-        error.value.data?.title || "Mật khẩu hiện tại không chính xác.";
-      toast.error(pwdError.value);
-      return;
-    }
-    toast.success("Đổi mật khẩu thành công.");
-    closeChangePasswordPopup();
-  } catch (err) {
-    pwdError.value = "Lỗi kết nối máy chủ.";
-    toast.error(pwdError.value);
-  } finally {
-    isChangingPwd.value = false;
-  }
-};
-
-interface NotificationDTO {
-  id: number;
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-}
-
-const isOpenNotificationBox = ref(false);
-
-const initialNotifs = ref<NotificationDTO[]>([]);
-
-if (authToken.value) {
-  const { data: initialNotifData } = await useAPI<NotificationDTO[]>(
-    "/notifications/my-latest",
-  );
-  initialNotifs.value = initialNotifData.value || [];
-}
-
-const notifications = ref<NotificationDTO[]>([]);
-const unreadCount = computed(
-  () => notifications.value.filter((n) => !n.isRead).length,
-);
-const notificationSummaryText = computed(() => {
-  if (notifications.value.length === 0) return "Không có thông báo nào";
-  if (unreadCount.value === 0) return "Tất cả thông báo đã được đọc";
-  return `Có ${unreadCount.value} thông báo chưa đọc`;
-});
-let stompClient: Client | null = null;
-
-const toggleNotificationBox = async () => {
-  isOpenNotificationBox.value = !isOpenNotificationBox.value;
-  isOpenUserBox.value = false;
-  if (isOpenNotificationBox.value) {
-    await refreshNotifications();
-  }
-};
-
-const closeNotificationBox = () => {
-  isOpenNotificationBox.value = false;
-};
-
-const saveToLocal = (notifs: NotificationDTO[]) => {
-  if (process.client) {
-    localStorage.setItem(
-      "novel_notifications",
-      JSON.stringify(notifs.slice(0, 30)),
-    );
-  }
-};
-
-const sortNotifications = (notifs: NotificationDTO[]) =>
-  notifs
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
-    .slice(0, 30);
-
-const upsertNotification = (noti: NotificationDTO) => {
-  const existIdx = notifications.value.findIndex((n) => n.id === noti.id);
-  if (existIdx !== -1) {
-    notifications.value[existIdx] = {
-      ...notifications.value[existIdx],
-      ...noti,
-    };
-  } else {
-    notifications.value.unshift(noti);
-  }
-
-  notifications.value = sortNotifications([...notifications.value]);
-  saveToLocal(notifications.value);
-};
-
-const mergeUnreadNotifications = (incoming: NotificationDTO[]) => {
-  incoming.forEach((noti) => {
-    upsertNotification({
-      ...noti,
-      isRead: false,
-    });
-  });
-};
-
-const loadAndMergeLocal = () => {
-  if (process.client) {
-    const localData = localStorage.getItem("novel_notifications");
-    const map = new Map();
-
-    if (localData) {
-      try {
-        const parsedLocal = JSON.parse(localData) as NotificationDTO[];
-        parsedLocal.forEach((n) => {
-          n.isRead = true;
-          map.set(n.id, n);
-        });
-      } catch (e) {
-        console.error("Lỗi đọc localStorage:", e);
-      }
-    }
-
-    if (initialNotifs.value) {
-      initialNotifs.value.forEach((n) => {
-        n.isRead = false;
-        map.set(n.id, n);
-      });
-    }
-
-    notifications.value = Array.from(map.values())
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
-      .slice(0, 30);
-
-    saveToLocal(notifications.value);
-  }
-};
-
-const isFetchingNotifications = ref(false);
-let notificationPollTimer: any = null;
-
-const refreshNotifications = async () => {
-  if (!process.client || !authToken.value || isFetchingNotifications.value) {
-    return;
-  }
-
-  isFetchingNotifications.value = true;
-  try {
-    syncFromStorage();
-    const data = await $fetch<NotificationDTO[]>("/notifications/my-latest", {
-      baseURL: config.public.apiBase,
-      headers: authToken.value
-        ? {
-            Authorization: `Bearer ${authToken.value}`,
-          }
-        : undefined,
-    });
-
-    mergeUnreadNotifications(data || []);
-  } catch (err) {
-    console.error("Không thể tải thông báo mới:", err);
-  } finally {
-    isFetchingNotifications.value = false;
-  }
-};
-
-const startNotificationPolling = () => {
-  if (!process.client || notificationPollTimer) return;
-
-  notificationPollTimer = window.setInterval(() => {
-    if (document.visibilityState === "visible") {
-      refreshNotifications();
-    }
-  }, 5000);
-};
-
-const stopNotificationPolling = () => {
-  if (!notificationPollTimer) return;
-  clearInterval(notificationPollTimer);
-  notificationPollTimer = null;
-};
-
-const connectWebSocket = () => {
-  syncFromStorage();
-  if (!authToken.value) return;
-
-  stompClient = new Client({
-    brokerURL: `ws://localhost:8080/websocket/stomp?access_token=${authToken.value}`,
-
-    connectHeaders: {
-      Authorization: `Bearer ${authToken.value}`,
-    },
-
-    reconnectDelay: 5000,
-    debug: (str) => console.log(str),
-
-    onConnect: (frame) => {
-      console.log("Đã kết nối Notification WebSocket thành công.");
-
-      const handleIncoming = (message: any) => {
-        const noti = JSON.parse(message.body) as NotificationDTO;
-        noti.isRead = false;
-
-        console.log("Nhận thông báo mới real-time:", noti);
-
-        upsertNotification(noti);
-      };
-
-      stompClient?.subscribe("/topic/notification", handleIncoming);
-      stompClient?.subscribe("/user/queue/notification", handleIncoming);
-    },
-    onStompError: (frame) => {
-      console.error("Lỗi STOMP:", frame.headers["message"]);
-    },
-  });
-
-  stompClient.activate();
-};
-
-const markAsRead = async (ntf: NotificationDTO) => {
-  if (ntf.isRead) return;
-  const { error } = await useAPI(`/notifications/${ntf.id}`, {
-    method: "PATCH",
-    body: {
-      id: ntf.id,
-      isRead: true,
-    },
-  });
-  if (!error.value) {
-    ntf.isRead = true;
-    saveToLocal(notifications.value);
-  }
-};
-
-const markAllAsRead = async () => {
-  const unreadNtfs = notifications.value.filter((n) => !n.isRead);
-  for (const ntf of unreadNtfs) {
-    await useAPI(`/notifications/${ntf.id}`, {
-      method: "PATCH",
-      body: {
-        id: ntf.id,
-        isRead: true,
-      },
-    });
-    ntf.isRead = true;
-  }
-  saveToLocal(notifications.value);
-};
-
-const formatDateTime = (dateStr: string | null) => {
-  if (!dateStr) return "---";
-  const date = new Date(dateStr);
-  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} lúc ${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
-};
 
 const handleDocumentClick = () => {
   closeUserBox();
   closeNotificationBox();
 };
 
-const handleVisibilityChange = () => {
-  if (document.visibilityState === "visible") {
-    refreshNotifications();
-  }
-};
-
-const handleNotificationRefresh = () => {
-  refreshNotifications();
-};
-
 onMounted(() => {
-  loadAndMergeLocal();
-  refreshNotifications();
-  connectWebSocket();
-  startNotificationPolling();
-
   document.addEventListener("click", handleDocumentClick);
-  document.addEventListener("visibilitychange", handleVisibilityChange);
-  window.addEventListener("focus", handleNotificationRefresh);
-  window.addEventListener(
-    "novel:notifications-refresh",
-    handleNotificationRefresh,
-  );
 });
 
 onUnmounted(() => {
-  if (stompClient) {
-    stompClient.deactivate();
-  }
-  stopNotificationPolling();
   document.removeEventListener("click", handleDocumentClick);
-  document.removeEventListener("visibilitychange", handleVisibilityChange);
-  window.removeEventListener("focus", handleNotificationRefresh);
-  window.removeEventListener(
-    "novel:notifications-refresh",
-    handleNotificationRefresh,
-  );
 });
 </script>

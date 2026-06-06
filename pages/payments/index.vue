@@ -398,10 +398,7 @@ const handleCreateDisbursement = async () => {
   isSubmitting.value = false;
 
   if (error.value) {
-    const errorData = error.value.data as any;
-    toast.fromMessage(
-      errorData?.message || errorData?.title || "Không thể tạo phiếu chi",
-    );
+    toast.fromMessage(getApiErrorMessage(error.value, "Không thể tạo phiếu chi"));
     return;
   }
 
@@ -416,10 +413,7 @@ const handleApprove = async (id: number) => {
   });
 
   if (error.value) {
-    const errorData = error.value.data as any;
-    toast.fromMessage(
-      errorData?.message || errorData?.title || "Không thể duyệt phiếu",
-    );
+    toast.fromMessage(getApiErrorMessage(error.value, "Không thể duyệt phiếu"));
     return;
   }
 

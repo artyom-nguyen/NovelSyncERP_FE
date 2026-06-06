@@ -448,26 +448,7 @@ const filters = ref<Record<string, string | number>>({
   authority: "",
 });
 
-const roleLabels: Record<string, string> = {
-  ROLE_ADMIN: "Admin",
-  ROLE_USER: "User",
-  ROLE_SALES: "Sales",
-  ROLE_PURCHASER: "Purchaser",
-  ROLE_WAREHOUSE: "Warehouse",
-  ROLE_MANAGER: "Manager",
-  ROLE_ACCOUNTANT: "Accountant",
-  ROLE_SHIPPER: "Shipper",
-};
-
-const fallbackAuthorityNames = [
-  "ROLE_ADMIN",
-  "ROLE_USER",
-  "ROLE_SALES",
-  "ROLE_PURCHASER",
-  "ROLE_WAREHOUSE",
-  "ROLE_MANAGER",
-  "ROLE_ACCOUNTANT",
-];
+const { fallbackAuthorityNames, formatRole } = useRoutePermissions();
 
 const { data: authorities } = await useAPI<string[]>("/authorities");
 
@@ -477,7 +458,7 @@ const roleOptions = computed(() => {
     : fallbackAuthorityNames;
 
   return names.map((value) => ({
-    label: roleLabels[value] || value,
+    label: formatRole(value),
     value,
   }));
 });
@@ -542,6 +523,7 @@ const filteredUsers = computed(() => {
         user.phone,
         getUserStatus(user),
         ...(user.authorities || []),
+        ...(user.authorities || []).map(formatRole),
       ]
         .map(normalizeText)
         .join(" ")
@@ -642,10 +624,7 @@ const handleSubmitUser = async () => {
   });
 
   if (submitError.value) {
-    const backEndMsg =
-      submitError.value.data?.title ||
-      submitError.value.data?.message ||
-      "Lỗi xử lý";
+    const backEndMsg = getApiErrorMessage(submitError.value, "Lỗi xử lý");
     toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
     isSubmitting.value = false;
     return;
@@ -665,16 +644,8 @@ const handleSubmitUser = async () => {
 };
 
 const getDeleteUserErrorMessage = (login: string, error: any) => {
-  const status = error?.statusCode || error?.status;
-  const serverMessage = [
-    error?.data?.title,
-    error?.data?.message,
-    error?.data?.detail,
-    error?.message,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  const status = getApiErrorStatus(error);
+  const serverMessage = getApiErrorText(error);
 
   const isLinkedDataError =
     status === 409 ||
@@ -688,10 +659,9 @@ const getDeleteUserErrorMessage = (login: string, error: any) => {
     return `Không thể xóa tài khoản "${login}" vì tài khoản này đang được liên kết với hồ sơ nhân viên. Vui lòng gỡ liên kết hoặc xóa hồ sơ nhân viên trước.`;
   }
 
-  return (
-    error?.data?.title ||
-    error?.data?.message ||
-    "Không thể xóa tài khoản. Vui lòng thử lại sau."
+  return getApiErrorMessage(
+    error,
+    "Không thể xóa tài khoản. Vui lòng thử lại sau.",
   );
 };
 
@@ -732,9 +702,6 @@ const formatDate = (dateStr: string | null) => {
   }).format(date);
 };
 
-const formatRole = (role: string) => {
-  return roleLabels[role] || role;
-};
 </script>
 
 

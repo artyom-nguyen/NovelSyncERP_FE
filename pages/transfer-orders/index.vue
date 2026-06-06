@@ -649,11 +649,8 @@ const handleSubmitTransferOrder = async () => {
   isSubmitting.value = false;
 
   if (error.value) {
-    const errorData = error.value.data as any;
     toast.fromMessage(
-      errorData?.message ||
-        errorData?.title ||
-        "Không thể tạo đơn điều chuyển",
+      getApiErrorMessage(error.value, "Không thể tạo đơn điều chuyển"),
     );
     return;
   }
@@ -669,11 +666,8 @@ const handleWorkflow = async (id: number, action: string) => {
   });
 
   if (error.value) {
-    const errorData = error.value.data as any;
     toast.fromMessage(
-      errorData?.message ||
-        errorData?.title ||
-        "Không thể cập nhật trạng thái đơn",
+      getApiErrorMessage(error.value, "Không thể cập nhật trạng thái đơn"),
     );
     return;
   }
@@ -694,11 +688,8 @@ const handleDeleteTransferOrder = async (id: number) => {
   });
 
   if (error.value) {
-    const errorData = error.value.data as any;
     toast.fromMessage(
-      errorData?.message ||
-        errorData?.title ||
-        "Không thể xóa đơn điều chuyển",
+      getApiErrorMessage(error.value, "Không thể xóa đơn điều chuyển"),
     );
     return;
   }

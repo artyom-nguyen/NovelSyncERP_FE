@@ -415,10 +415,7 @@ const handleSubmitCustomer = async () => {
   isSubmitting.value = false;
 
   if (error.value) {
-    const errorData = error.value.data as any;
-    toast.fromMessage(
-      errorData?.message || errorData?.title || "Không thể lưu khách hàng",
-    );
+    toast.fromMessage(getApiErrorMessage(error.value, "Không thể lưu khách hàng"));
     return;
   }
 
@@ -440,10 +437,7 @@ const handleDeleteCustomer = async (id: number) => {
   const { error } = await useAPI(`/customers/${id}`, { method: "DELETE" });
 
   if (error.value) {
-    const errorData = error.value.data as any;
-    toast.fromMessage(
-      errorData?.message || errorData?.title || "Không thể xóa khách hàng",
-    );
+    toast.fromMessage(getApiErrorMessage(error.value, "Không thể xóa khách hàng"));
     return;
   }
 

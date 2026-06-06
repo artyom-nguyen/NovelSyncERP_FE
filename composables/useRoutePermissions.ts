@@ -8,67 +8,89 @@ interface RouteAccessRule {
   roles: string[];
 }
 
+export const roleLabels: Record<string, string> = {
+  ROLE_ADMIN: "Quản trị viên",
+  ROLE_USER: "Người dùng",
+  ROLE_SALES: "Bán hàng",
+  ROLE_PURCHASER: "Mua hàng",
+  ROLE_WAREHOUSE: "Thủ kho",
+  ROLE_MANAGER: "Quản lý",
+  ROLE_ACCOUNTANT: "Kế toán",
+  ROLE_SHIPPER: "Giao hàng",
+};
+
+export const fallbackAuthorityNames = Object.keys(roleLabels);
+
+export const permissionRoleGroups = {
+  sales: ["ROLE_ADMIN", "ROLE_SALES", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
+  purchase: ["ROLE_ADMIN", "ROLE_PURCHASER", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
+  transfer: ["ROLE_ADMIN", "ROLE_WAREHOUSE", "ROLE_MANAGER", "ROLE_SHIPPER"],
+  inventory: ["ROLE_ADMIN", "ROLE_WAREHOUSE", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
+  catalog: ["ROLE_ADMIN", "ROLE_PURCHASER", "ROLE_WAREHOUSE", "ROLE_MANAGER"],
+  finance: ["ROLE_ADMIN", "ROLE_ACCOUNTANT"],
+  adminManager: ["ROLE_ADMIN", "ROLE_MANAGER"],
+  adminOnly: ["ROLE_ADMIN"],
+};
+
+export type PermissionAction =
+  | "salesOrders.create"
+  | "salesOrders.approve"
+  | "salesOrders.delivery"
+  | "salesOrders.payment"
+  | "salesOrders.cancel"
+  | "purchaseOrders.create"
+  | "purchaseOrders.approve"
+  | "purchaseOrders.delivery"
+  | "purchaseOrders.complete"
+  | "purchaseOrders.cancel"
+  | "transferOrders.create"
+  | "payments.approve"
+  | "admin.users";
+
+export const permissionActions: Record<PermissionAction, string[]> = {
+  "salesOrders.create": ["ROLE_ADMIN", "ROLE_SALES"],
+  "salesOrders.approve": ["ROLE_ADMIN", "ROLE_MANAGER"],
+  "salesOrders.delivery": ["ROLE_ADMIN", "ROLE_SHIPPER"],
+  "salesOrders.payment": ["ROLE_ADMIN", "ROLE_SHIPPER", "ROLE_ACCOUNTANT"],
+  "salesOrders.cancel": ["ROLE_ADMIN", "ROLE_MANAGER"],
+  "purchaseOrders.create": ["ROLE_ADMIN", "ROLE_PURCHASER"],
+  "purchaseOrders.approve": ["ROLE_ADMIN", "ROLE_MANAGER"],
+  "purchaseOrders.delivery": ["ROLE_ADMIN", "ROLE_SHIPPER"],
+  "purchaseOrders.complete": ["ROLE_ADMIN", "ROLE_ACCOUNTANT"],
+  "purchaseOrders.cancel": ["ROLE_ADMIN", "ROLE_MANAGER"],
+  "transferOrders.create": permissionRoleGroups.transfer,
+  "payments.approve": permissionRoleGroups.finance,
+  "admin.users": permissionRoleGroups.adminOnly,
+};
+
+const routeAccessRules: RouteAccessRule[] = [
+  { path: "/sales-orders", roles: permissionRoleGroups.sales },
+  { path: "/customers", roles: permissionRoleGroups.sales },
+  { path: "/purchase-orders", roles: permissionRoleGroups.purchase },
+  { path: "/transfer-orders", roles: permissionRoleGroups.transfer },
+  { path: "/warehouses", roles: permissionRoleGroups.adminManager },
+  { path: "/inventory-balances", roles: permissionRoleGroups.inventory },
+  { path: "/inventory-transactions", roles: permissionRoleGroups.inventory },
+  { path: "/products", roles: permissionRoleGroups.catalog },
+  { path: "/product-categories", roles: permissionRoleGroups.catalog },
+  { path: "/suppliers", roles: permissionRoleGroups.catalog },
+  { path: "/payments", roles: permissionRoleGroups.finance },
+  { path: "/users", roles: permissionRoleGroups.adminOnly },
+  { path: "/employees", roles: permissionRoleGroups.adminManager },
+  { path: "/departments", roles: permissionRoleGroups.adminManager },
+];
+
+const publicRoutePrefixes = [
+  "/",
+  "/account/register",
+  "/account/activate",
+  "/account/reset/request",
+  "/account/reset/finish",
+];
+
+const authenticatedOpenRoutes = ["/dashboard", "/work"];
+
 export const useRoutePermissions = () => {
-  const salesRoles = [
-    "ROLE_ADMIN",
-    "ROLE_SALES",
-    "ROLE_MANAGER",
-    "ROLE_ACCOUNTANT",
-  ];
-  const purchaseRoles = [
-    "ROLE_ADMIN",
-    "ROLE_PURCHASER",
-    "ROLE_MANAGER",
-    "ROLE_ACCOUNTANT",
-  ];
-  const transferRoles = [
-    "ROLE_ADMIN",
-    "ROLE_WAREHOUSE",
-    "ROLE_MANAGER",
-    "ROLE_SHIPPER",
-  ];
-  const inventoryRoles = [
-    "ROLE_ADMIN",
-    "ROLE_WAREHOUSE",
-    "ROLE_MANAGER",
-    "ROLE_ACCOUNTANT",
-  ];
-  const catalogRoles = [
-    "ROLE_ADMIN",
-    "ROLE_PURCHASER",
-    "ROLE_WAREHOUSE",
-    "ROLE_MANAGER",
-  ];
-  const financeRoles = ["ROLE_ADMIN", "ROLE_ACCOUNTANT"];
-  const adminManagerRoles = ["ROLE_ADMIN", "ROLE_MANAGER"];
-
-  const publicRoutePrefixes = [
-    "/",
-    "/account/register",
-    "/account/activate",
-    "/account/reset/request",
-    "/account/reset/finish",
-  ];
-
-  const authenticatedOpenRoutes = ["/dashboard", "/work"];
-
-  const routeAccessRules: RouteAccessRule[] = [
-    { path: "/sales-orders", roles: salesRoles },
-    { path: "/customers", roles: salesRoles },
-    { path: "/purchase-orders", roles: purchaseRoles },
-    { path: "/transfer-orders", roles: transferRoles },
-    { path: "/warehouses", roles: adminManagerRoles },
-    { path: "/inventory-balances", roles: inventoryRoles },
-    { path: "/inventory-transactions", roles: inventoryRoles },
-    { path: "/products", roles: catalogRoles },
-    { path: "/product-categories", roles: catalogRoles },
-    { path: "/suppliers", roles: catalogRoles },
-    { path: "/payments", roles: financeRoles },
-    { path: "/users", roles: ["ROLE_ADMIN"] },
-    { path: "/employees", roles: adminManagerRoles },
-    { path: "/departments", roles: adminManagerRoles },
-  ];
-
   const normalizePath = (path: string) =>
     path.length > 1 ? path.replace(/\/+$/, "") : path;
 
@@ -108,6 +130,10 @@ export const useRoutePermissions = () => {
     return allowedRoles.some((role) => userRoles.includes(role));
   };
 
+  const createRoleChecker =
+    (userRoles: string[] | { value: string[] }) => (allowedRoles: string[]) =>
+      hasAnyRole(Array.isArray(userRoles) ? userRoles : userRoles.value, allowedRoles);
+
   const canAccessPath = (path: string, userRoles: string[]) => {
     if (isPublicRoute(path) || isAuthenticatedOpenRoute(path)) return true;
     const rule = getRouteAccessRule(path);
@@ -115,20 +141,31 @@ export const useRoutePermissions = () => {
     return hasAnyRole(userRoles, rule.roles);
   };
 
+  const getActionRoles = (action: PermissionAction) => permissionActions[action];
+
+  const formatRole = (role: string) => roleLabels[role] || role;
+
   return {
-    adminManagerRoles,
+    adminManagerRoles: permissionRoleGroups.adminManager,
     canAccessPath,
-    catalogRoles,
-    financeRoles,
+    catalogRoles: permissionRoleGroups.catalog,
+    createRoleChecker,
+    fallbackAuthorityNames,
+    financeRoles: permissionRoleGroups.finance,
+    formatRole,
+    getActionRoles,
     getRouteAccessRule,
     getUserRoles,
     hasAnyRole,
-    inventoryRoles,
+    inventoryRoles: permissionRoleGroups.inventory,
     isAuthenticatedOpenRoute,
     isPublicRoute,
-    purchaseRoles,
+    permissionActions,
+    permissionRoleGroups,
+    purchaseRoles: permissionRoleGroups.purchase,
     routeAccessRules,
-    salesRoles,
-    transferRoles,
+    roleLabels,
+    salesRoles: permissionRoleGroups.sales,
+    transferRoles: permissionRoleGroups.transfer,
   };
 };

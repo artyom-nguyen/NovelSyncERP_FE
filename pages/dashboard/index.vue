@@ -574,51 +574,23 @@ const currentMonth = ref(today.getMonth());
 const currentYear = ref(today.getFullYear());
 
 const { data: account } = await useAPI<Account>("/account");
+const {
+  adminManagerRoles,
+  catalogRoles,
+  createRoleChecker,
+  financeRoles,
+  formatRole,
+  getActionRoles,
+  getUserRoles,
+  inventoryRoles,
+  purchaseRoles,
+  salesRoles,
+  transferRoles,
+} = useRoutePermissions();
 
-const roles = computed(() => {
-  const accountRoles = account.value?.authorities || [];
-  const singleRole = account.value?.authority ? [account.value.authority] : [];
-  return [...new Set([...accountRoles, ...singleRole])];
-});
-
-const hasAnyRole = (requiredRoles: string[]) => {
-  if (!requiredRoles.length) return true;
-  if (!roles.value.length) return false;
-  return requiredRoles.some((role) => roles.value.includes(role));
-};
-
-const salesRoles = [
-  "ROLE_ADMIN",
-  "ROLE_SALES",
-  "ROLE_MANAGER",
-  "ROLE_ACCOUNTANT",
-];
-const purchaseRoles = [
-  "ROLE_ADMIN",
-  "ROLE_PURCHASER",
-  "ROLE_MANAGER",
-  "ROLE_ACCOUNTANT",
-];
-const transferRoles = [
-  "ROLE_ADMIN",
-  "ROLE_WAREHOUSE",
-  "ROLE_MANAGER",
-  "ROLE_SHIPPER",
-];
-const inventoryRoles = [
-  "ROLE_ADMIN",
-  "ROLE_WAREHOUSE",
-  "ROLE_MANAGER",
-  "ROLE_ACCOUNTANT",
-];
-const catalogRoles = [
-  "ROLE_ADMIN",
-  "ROLE_PURCHASER",
-  "ROLE_WAREHOUSE",
-  "ROLE_MANAGER",
-];
-const financeRoles = ["ROLE_ADMIN", "ROLE_ACCOUNTANT"];
-const adminManagerRoles = ["ROLE_ADMIN", "ROLE_MANAGER"];
+const roles = computed(() => getUserRoles(account.value));
+const hasAnyRole = createRoleChecker(roles);
+const adminOnlyRoles = getActionRoles("admin.users");
 
 const canLoadCatalogData = computed(() => hasAnyRole(catalogRoles));
 const canLoadSalesData = computed(() => hasAnyRole(salesRoles));
@@ -666,19 +638,19 @@ const balancesWithProduct = computed(() =>
 );
 
 const canCreateSalesDraft = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_SALES"]),
+  hasAnyRole(getActionRoles("salesOrders.create")),
 );
 const canCreatePurchaseDraft = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_PURCHASER"]),
+  hasAnyRole(getActionRoles("purchaseOrders.create")),
 );
 const canCreateTransferDraft = computed(() => hasAnyRole(transferRoles));
 const canApproveOrders = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+  hasAnyRole(getActionRoles("salesOrders.approve")),
 );
 const canCompleteSalesPurchase = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_ACCOUNTANT"]),
+  hasAnyRole(getActionRoles("purchaseOrders.complete")),
 );
-const canCancelOrders = computed(() => hasAnyRole(["ROLE_ADMIN"]));
+const canCancelOrders = computed(() => hasAnyRole(adminOnlyRoles));
 const canViewInventoryWork = computed(() => hasAnyRole(inventoryRoles));
 
 const fullName = computed(() => {
@@ -699,19 +671,9 @@ const userInitials = computed(() => {
 });
 
 const primaryRole = computed(() => {
-  const roleMap: Record<string, string> = {
-    ROLE_ADMIN: "Quản trị hệ thống",
-    ROLE_USER: "Nhân viên",
-    ROLE_WAREHOUSE: "Thủ kho",
-    ROLE_PURCHASER: "Mua hàng",
-    ROLE_SALES: "Kinh doanh",
-    ROLE_MANAGER: "Quản lý",
-    ROLE_ACCOUNTANT: "Kế toán",
-    ROLE_SHIPPER: "Vận chuyển",
-  };
   const primary =
     roles.value.find((role) => role !== "ROLE_USER") || roles.value[0];
-  return roleMap[primary] || primary || "Nhân viên";
+  return primary ? formatRole(primary) : "Nhân viên";
 });
 
 const rolePermissionSummary = computed(() => {
@@ -792,7 +754,7 @@ const quickActionRoleMap: Record<string, string[]> = {
   "/purchase-orders": purchaseRoles,
   "/inventory-balances": inventoryRoles,
   "/suppliers": catalogRoles,
-  "/users": ["ROLE_ADMIN"],
+  "/users": adminOnlyRoles,
 };
 
 const permittedQuickActions = computed(() =>
@@ -895,7 +857,7 @@ const moduleCards: ModuleCard[] = [
     route: "/users",
     icon: "/img-fix/icon/icon-user-add-blue.svg",
     colorClass: "mdl-linear-gray",
-    roles: ["ROLE_ADMIN"],
+    roles: adminOnlyRoles,
   },
   {
     title: "Nhân viên",

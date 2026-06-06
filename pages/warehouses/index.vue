@@ -345,10 +345,7 @@ const handleSubmitWarehouse = async () => {
   isSubmitting.value = false;
 
   if (error.value) {
-    const errorData = error.value.data as any;
-    toast.fromMessage(
-      errorData?.message || errorData?.title || "Không thể lưu kho",
-    );
+    toast.fromMessage(getApiErrorMessage(error.value, "Không thể lưu kho"));
     return;
   }
 
@@ -366,10 +363,7 @@ const handleDeleteWarehouse = async (id: number) => {
   const { error } = await useAPI(`/warehouses/${id}`, { method: "DELETE" });
 
   if (error.value) {
-    const errorData = error.value.data as any;
-    toast.fromMessage(
-      errorData?.message || errorData?.title || "Không thể xóa kho",
-    );
+    toast.fromMessage(getApiErrorMessage(error.value, "Không thể xóa kho"));
     return;
   }
 
