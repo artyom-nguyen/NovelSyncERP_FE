@@ -2,506 +2,499 @@
   <div class="top-layout-site dashboard-modern">
     <div class="main-layout-site">
       <div class="working-db-wp">
-          <div class="main-db-content">
-            <div class="box-welcome-db">
-              <div class="box-weldb--title">
-                <div class="user-avatar">
-                  <div class="avatar">
-                    <p
-                      v-if="!avatarUrl"
-                      class="avatar-initials text-size-14-medium"
-                    >
-                      {{ userInitials }}
+        <div class="main-db-content">
+          <div class="box-welcome-db">
+            <div class="box-weldb--title">
+              <div class="user-avatar">
+                <div class="avatar">
+                  <p
+                    v-if="!avatarUrl"
+                    class="avatar-initials text-size-14-medium"
+                  >
+                    {{ userInitials }}
+                  </p>
+                  <img v-else :src="avatarUrl" alt="" />
+                </div>
+                <div class="info">
+                  <p class="txt-name">{{ greetingText }}, {{ fullName }}!</p>
+                  <div class="lst-contract-meta">
+                    <p class="txt-contract-meta">{{ primaryRole }}</p>
+                    <p class="txt-contract-meta">
+                      {{ account?.email || "Chưa có email" }}
                     </p>
-                    <img v-else :src="avatarUrl" alt="" />
+                    <p class="txt-contract-meta">
+                      {{ account?.login || "---" }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                class="btn-frame-color briefing-ai wth-tooltip"
+                @click="refreshDashboard"
+              >
+                <span class="icon">
+                  <img src="/img-fix/icon/icon-topbar-reload.svg" alt="" />
+                </span>
+                <span class="txt-clr text-12-light">Làm mới dữ liệu</span>
+                <span class="topbar-tooltip">Load lại danh sách</span>
+              </button>
+            </div>
+            <div class="box-weldb--content">
+              <div class="box-work-todo">
+                <p class="text-size-13-rgl">{{ dashboardBriefing }}</p>
+              </div>
+              <div class="ct-grid-kt-color">
+                <div class="grid-col-item-4">
+                  <div class="imt-school-schedule yellow-db-card">
+                    <p class="title">Cần xử lý</p>
+                    <p class="number">{{ urgentActions.length }}</p>
+                  </div>
+                  <div class="imt-school-schedule blue-db-card">
+                    <p class="title">Sản phẩm</p>
+                    <p class="number">{{ productsList.length }}</p>
+                  </div>
+                  <div class="imt-school-schedule green-db-card">
+                    <p class="title">Đơn hôm nay</p>
+                    <p class="number">{{ todayOrderCount }}</p>
+                  </div>
+                  <div class="imt-school-schedule red-db-card">
+                    <p class="title">Tồn kho thấp</p>
+                    <p class="number">{{ lowStockBalances.length }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box-function-grid">
+            <div class="grid-dynamic-frame grid-6">
+              <NuxtLink
+                v-for="action in permittedQuickActions"
+                :key="action.title"
+                :to="action.route"
+                class="imt-card-function dashboard-link"
+                :class="action.cardClass"
+              >
+                <div class="icon">
+                  <img :src="action.icon" alt="" />
+                </div>
+                <p class="txt">{{ action.title }}</p>
+              </NuxtLink>
+            </div>
+          </div>
+
+          <div class="box-title-color-db box-technical-tasks">
+            <div class="box-tcd--title">
+              <div class="left">
+                <div class="box-icon-clr linear-bg-sb">
+                  <div class="icon">
+                    <img src="/img-fix/icon/icon-storefront.svg" alt="" />
                   </div>
                   <div class="info">
-                    <p class="txt-name">{{ greetingText }}, {{ fullName }}!</p>
-                    <div class="lst-contract-meta">
-                      <p class="txt-contract-meta">{{ primaryRole }}</p>
-                      <p class="txt-contract-meta">
-                        {{ account?.email || "Chưa có email" }}
-                      </p>
-                      <p class="txt-contract-meta">
-                        {{ account?.login || "---" }}
-                      </p>
-                    </div>
+                    <p class="text-14-smb">Nghiệp vụ chuyên môn</p>
+                    <p class="text-size-12-light text-gray-99a">
+                      Truy cập nhanh vào các module ERP đã triển khai
+                    </p>
                   </div>
                 </div>
-
-                <button
-                  class="btn-frame-color briefing-ai wth-tooltip"
-                  @click="refreshDashboard"
-                >
-                  <span class="icon">
-                    <img src="/img-fix/icon/icon-topbar-reload.svg" alt="" />
-                  </span>
-                  <span class="txt-clr text-12-light">Làm mới dữ liệu</span>
-                  <span class="topbar-tooltip">Load lại danh sách</span>
-                </button>
               </div>
-              <div class="box-weldb--content">
-                <div class="box-work-todo">
-                  <p class="text-size-13-rgl">{{ dashboardBriefing }}</p>
+              <div class="right">
+                <div class="ct-label-ticket">
+                  <div class="label-table-new bg-label-zumthor-3">
+                    <p class="text-size-12-medium">
+                      {{ activeModuleCount }} chức năng được phân
+                    </p>
+                  </div>
                 </div>
-                <div class="ct-grid-kt-color">
-                  <div class="grid-col-item-4">
-                    <div class="imt-school-schedule yellow-db-card">
-                      <p class="title">Cần xử lý</p>
-                      <p class="number">{{ urgentActions.length }}</p>
+              </div>
+            </div>
+            <div class="box-tcd--content">
+              <div class="mb-8">
+                <p class="txt-uc-10-medium text-gray-99a">
+                  Nghiệp vụ chính của bạn
+                </p>
+              </div>
+              <div class="lst-job-tr">
+                <div class="grid-module-erp">
+                  <NuxtLink
+                    v-for="module in activeModules"
+                    :key="module.title"
+                    :to="module.route"
+                    class="imt-card-function dashboard-link module-active module-card-simple"
+                    :class="module.colorClass"
+                  >
+                    <div class="module-card-main">
+                      <div class="icon">
+                        <img :src="module.icon" alt="" />
+                      </div>
+                      <div class="module-card-text">
+                        <p class="title-module">{{ module.title }}</p>
+                        <p class="desc-module">{{ module.description }}</p>
+                      </div>
                     </div>
-                    <div class="imt-school-schedule blue-db-card">
-                      <p class="title">Sản phẩm</p>
-                      <p class="number">{{ productsList.length }}</p>
+                    <span class="module-card-arrow">
+                      <img
+                        src="/img-fix/icon/icon-arrow-right-new.svg"
+                        alt=""
+                      />
+                    </span>
+                  </NuxtLink>
+
+                  <div
+                    v-for="module in inactiveModules"
+                    :key="module.title"
+                    class="imt-card-function module-card-simple"
+                    :class="module.colorClass"
+                  >
+                    <div class="module-permission">
+                      <div class="label-table-new">
+                        <p>Chờ cấp</p>
+                      </div>
                     </div>
-                    <div class="imt-school-schedule green-db-card">
-                      <p class="title">Đơn hôm nay</p>
-                      <p class="number">{{ todayOrderCount }}</p>
-                    </div>
-                    <div class="imt-school-schedule red-db-card">
-                      <p class="title">Tồn kho thấp</p>
-                      <p class="number">{{ lowStockBalances.length }}</p>
+                    <div class="module-card-main">
+                      <div class="icon">
+                        <img :src="module.icon" alt="" />
+                      </div>
+                      <div class="module-card-text">
+                        <p class="title-module">{{ module.title }}</p>
+                        <p class="desc-module">{{ module.description }}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="box-function-grid">
-              <div class="grid-dynamic-frame grid-6">
-                <NuxtLink
-                  v-for="action in permittedQuickActions"
-                  :key="action.title"
-                  :to="action.route"
-                  class="imt-card-function dashboard-link"
-                  :class="action.cardClass"
-                >
+          <div class="box-title-color-db bg-linear-border-yellow">
+            <div class="box-tcd--title">
+              <div class="left">
+                <div class="box-icon-clr dutch-orange">
                   <div class="icon">
-                    <img :src="action.icon" alt="" />
+                    <img src="/img-fix/icon/icon-warning-blue.svg" alt="" />
                   </div>
-                  <p class="txt">{{ action.title }}</p>
-                </NuxtLink>
-              </div>
-            </div>
-
-            <div class="box-title-color-db box-technical-tasks">
-              <div class="box-tcd--title">
-                <div class="left">
-                  <div class="box-icon-clr linear-bg-sb">
-                    <div class="icon">
-                      <img src="/img-fix/icon/icon-storefront.svg" alt="" />
-                    </div>
-                    <div class="info">
-                      <p class="text-14-smb">Nghiệp vụ chuyên môn</p>
-                      <p class="text-size-12-light text-gray-99a">
-                        Truy cập nhanh vào các module ERP đã triển khai
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class="right">
-                  <div class="ct-label-ticket">
-                    <div class="label-table-new bg-label-zumthor-3">
-                      <p class="text-size-12-medium">
-                        {{ activeModuleCount }} chức năng được phân
-                      </p>
-                    </div>
+                  <div class="info">
+                    <p class="text-14-smb txt-d-yellow-2">Cần xử lý ngay</p>
                   </div>
                 </div>
               </div>
-              <div class="box-tcd--content">
-                <div class="mb-8">
-                  <p class="txt-uc-10-medium text-gray-99a">
-                    Nghiệp vụ chính của bạn
+              <div class="right">
+                <div
+                  class="label-table-new label-dutch-orange-op50 border-radius-100"
+                >
+                  <p class="text-size-13-medium">
+                    {{ urgentActions.length }} việc
                   </p>
                 </div>
-                <div class="lst-job-tr">
-                  <div class="grid-module-erp">
-                    <NuxtLink
-                      v-for="module in activeModules"
-                      :key="module.title"
-                      :to="module.route"
-                      class="imt-card-function dashboard-link module-active module-card-simple"
-                      :class="module.colorClass"
-                    >
-                      <div class="module-card-main">
-                        <div class="icon">
-                          <img :src="module.icon" alt="" />
-                        </div>
-                        <div class="module-card-text">
-                          <p class="title-module">{{ module.title }}</p>
-                          <p class="desc-module">{{ module.description }}</p>
-                        </div>
+              </div>
+            </div>
+            <div class="box-tcd--content">
+              <div v-if="urgentActions.length" class="lst-work-deal lst-job-tr">
+                <div
+                  v-for="item in urgentActions"
+                  :key="item.key"
+                  class="tr-job-now"
+                  :class="item.rowClass"
+                >
+                  <div class="left">
+                    <div class="icon">
+                      <img :src="item.icon" alt="" />
+                    </div>
+                    <div class="info">
+                      <p class="text-size-13-medium">{{ item.title }}</p>
+                      <div class="lst-contract-meta">
+                        <p class="txt-contract-meta">{{ item.meta }}</p>
+                        <p class="txt-contract-meta">{{ item.time }}</p>
                       </div>
-                      <span class="module-card-arrow">
+                    </div>
+                  </div>
+                  <div class="right">
+                    <div class="btn-color-box">
+                      <NuxtLink
+                        :to="item.route"
+                        class="btn-frame-text internation-orange"
+                      >
+                        Xử lý
+                        <span class="icon">
+                          <img
+                            src="/img-fix/icon/icon-bold-caretright-gray.svg"
+                            alt=""
+                          />
+                        </span>
+                      </NuxtLink>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="empty-dashboard-row">
+                <p class="text-size-13-rgl">
+                  Không có việc gấp. Dữ liệu vận hành đang ổn định.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="box-title-color-db">
+            <div class="box-tcd--title">
+              <div class="left">
+                <div class="box-icon-clr linear-bg-sb">
+                  <div class="icon">
+                    <img
+                      src="/img-fix/icon/icon-bold-calendarcheck.svg"
+                      alt=""
+                    />
+                  </div>
+                  <div class="info">
+                    <p class="text-14-smb">Hoạt động gần đây</p>
+                    <p class="text-size-12-light text-gray-99a">
+                      Đơn nhập và đơn bán mới nhất trong hệ thống
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="right">
+                <p class="text-size-12-medium txt-blue">
+                  {{ formatCurrency(monthSalesAmount) }}
+                </p>
+              </div>
+            </div>
+            <div class="box-tcd--content">
+              <div
+                v-if="recentActivities.length"
+                class="lst-job-tr lst-db-activity"
+              >
+                <div
+                  v-for="activity in recentActivities"
+                  :key="activity.key"
+                  class="tr-job-now"
+                >
+                  <div class="left">
+                    <div class="icon" :class="activity.iconClass"></div>
+                    <div class="info">
+                      <p class="text-size-13-medium">{{ activity.title }}</p>
+                      <div class="lst-contract-meta lst-dot-date">
+                        <p class="txt-contract-meta">{{ activity.amount }}</p>
+                        <p class="txt-contract-meta">{{ activity.date }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="right">
+                    <div class="ct-task-label">
+                      <div class="label-table-new bg-label-zumthor-3">
+                        <p>{{ activity.status }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="empty-dashboard-row">
+                <p class="text-size-13-rgl">Chưa có hoạt động đơn hàng.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-db-content">
+          <div class="box-title-color-db">
+            <div class="box-tcd--content">
+              <div class="box-calendar-modal">
+                <div class="title-calendar">
+                  <p class="txt-date">
+                    {{ `Tháng ${currentMonth + 1} ${currentYear}` }}
+                  </p>
+
+                  <div class="btn-change-date">
+                    <button class="btn-frame-color" @click="prevMonth">
+                      <span class="icon">
                         <img
-                          src="/img-fix/icon/icon-arrow-right-new.svg"
+                          src="/img-fix/icon/icon-bold-caretleft.svg"
                           alt=""
                         />
                       </span>
-                    </NuxtLink>
+                    </button>
 
+                    <button class="btn-frame-color" @click="nextMonth">
+                      <span class="icon">
+                        <img
+                          src="/img-fix/icon/icon-bold-caretright.svg"
+                          alt=""
+                        />
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="box-calendar--calendar">
+                  <div class="box-calendar_dotw">
+                    <p class="txt-dotw">CN</p>
+                    <p class="txt-dotw">T2</p>
+                    <p class="txt-dotw">T3</p>
+                    <p class="txt-dotw">T4</p>
+                    <p class="txt-dotw">T5</p>
+                    <p class="txt-dotw">T6</p>
+                    <p class="txt-dotw">T7</p>
+                  </div>
+
+                  <div class="box-calendar_day">
                     <div
-                      v-for="module in inactiveModules"
-                      :key="module.title"
-                      class="imt-card-function module-card-simple"
-                      :class="module.colorClass"
+                      v-for="(week, weekIndex) in calendarRows"
+                      :key="weekIndex"
+                      class="box-calendar_day--row"
                     >
-                      <div class="module-permission">
-                        <div class="label-table-new">
-                          <p>Chờ cấp</p>
-                        </div>
-                      </div>
-                      <div class="module-card-main">
-                        <div class="icon">
-                          <img :src="module.icon" alt="" />
-                        </div>
-                        <div class="module-card-text">
-                          <p class="title-module">{{ module.title }}</p>
-                          <p class="desc-module">{{ module.description }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="box-title-color-db bg-linear-border-yellow">
-              <div class="box-tcd--title">
-                <div class="left">
-                  <div class="box-icon-clr dutch-orange">
-                    <div class="icon">
-                      <img src="/img-fix/icon/icon-warning-blue.svg" alt="" />
-                    </div>
-                    <div class="info">
-                      <p class="text-14-smb txt-d-yellow-2">Cần xử lý ngay</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="right">
-                  <div
-                    class="label-table-new label-dutch-orange-op50 border-radius-100"
-                  >
-                    <p class="text-size-13-medium">
-                      {{ urgentActions.length }} việc
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="box-tcd--content">
-                <div
-                  v-if="urgentActions.length"
-                  class="lst-work-deal lst-job-tr"
-                >
-                  <div
-                    v-for="item in urgentActions"
-                    :key="item.key"
-                    class="tr-job-now"
-                    :class="item.rowClass"
-                  >
-                    <div class="left">
-                      <div class="icon">
-                        <img :src="item.icon" alt="" />
-                      </div>
-                      <div class="info">
-                        <p class="text-size-13-medium">{{ item.title }}</p>
-                        <div class="lst-contract-meta">
-                          <p class="txt-contract-meta">{{ item.meta }}</p>
-                          <p class="txt-contract-meta">{{ item.time }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="right">
-                      <div class="btn-color-box">
-                        <NuxtLink
-                          :to="item.route"
-                          class="btn-frame-text internation-orange"
-                        >
-                          Xử lý
-                          <span class="icon">
-                            <img
-                              src="/img-fix/icon/icon-bold-caretright-gray.svg"
-                              alt=""
-                            />
-                          </span>
-                        </NuxtLink>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="empty-dashboard-row">
-                  <p class="text-size-13-rgl">
-                    Không có việc gấp. Dữ liệu vận hành đang ổn định.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div class="box-title-color-db">
-              <div class="box-tcd--title">
-                <div class="left">
-                  <div class="box-icon-clr linear-bg-sb">
-                    <div class="icon">
-                      <img
-                        src="/img-fix/icon/icon-bold-calendarcheck.svg"
-                        alt=""
-                      />
-                    </div>
-                    <div class="info">
-                      <p class="text-14-smb">Hoạt động gần đây</p>
-                      <p class="text-size-12-light text-gray-99a">
-                        Đơn nhập và đơn bán mới nhất trong hệ thống
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class="right">
-                  <p class="text-size-12-medium txt-blue">
-                    {{ formatCurrency(monthSalesAmount) }}
-                  </p>
-                </div>
-              </div>
-              <div class="box-tcd--content">
-                <div
-                  v-if="recentActivities.length"
-                  class="lst-job-tr lst-db-activity"
-                >
-                  <div
-                    v-for="activity in recentActivities"
-                    :key="activity.key"
-                    class="tr-job-now"
-                  >
-                    <div class="left">
-                      <div class="icon" :class="activity.iconClass"></div>
-                      <div class="info">
-                        <p class="text-size-13-medium">{{ activity.title }}</p>
-                        <div class="lst-contract-meta lst-dot-date">
-                          <p class="txt-contract-meta">{{ activity.amount }}</p>
-                          <p class="txt-contract-meta">{{ activity.date }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="right">
-                      <div class="ct-task-label">
-                        <div class="label-table-new bg-label-zumthor-3">
-                          <p>{{ activity.status }}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="empty-dashboard-row">
-                  <p class="text-size-13-rgl">Chưa có hoạt động đơn hàng.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="sidebar-db-content">
-            <div class="box-title-color-db">
-              <div class="box-tcd--content">
-                <div class="box-calendar-modal">
-                  <div class="title-calendar">
-                    <p class="txt-date">
-                      {{ `Tháng ${currentMonth + 1} ${currentYear}` }}
-                    </p>
-
-                    <div class="btn-change-date">
-                      <button class="btn-frame-color" @click="prevMonth">
-                        <span class="icon">
-                          <img
-                            src="/img-fix/icon/icon-bold-caretleft.svg"
-                            alt=""
-                          />
-                        </span>
-                      </button>
-
-                      <button class="btn-frame-color" @click="nextMonth">
-                        <span class="icon">
-                          <img
-                            src="/img-fix/icon/icon-bold-caretright.svg"
-                            alt=""
-                          />
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div class="box-calendar--calendar">
-                    <div class="box-calendar_dotw">
-                      <p class="txt-dotw">CN</p>
-                      <p class="txt-dotw">T2</p>
-                      <p class="txt-dotw">T3</p>
-                      <p class="txt-dotw">T4</p>
-                      <p class="txt-dotw">T5</p>
-                      <p class="txt-dotw">T6</p>
-                      <p class="txt-dotw">T7</p>
-                    </div>
-
-                    <div class="box-calendar_day">
                       <div
-                        v-for="(week, weekIndex) in calendarRows"
-                        :key="weekIndex"
-                        class="box-calendar_day--row"
+                        v-for="(day, dayIndex) in week"
+                        :key="dayIndex"
+                        class="txt-day"
+                        :class="{
+                          'day-empty': !day,
+                          active: isToday(day),
+                          'has-activity': hasCalendarActivity(day),
+                        }"
                       >
-                        <div
-                          v-for="(day, dayIndex) in week"
-                          :key="dayIndex"
-                          class="txt-day"
-                          :class="{
-                            'day-empty': !day,
-                            active: isToday(day),
-                            'has-activity': hasCalendarActivity(day),
-                          }"
-                        >
-                          {{ day || "" }}
-                        </div>
+                        {{ day || "" }}
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="box-title-color-db">
-              <div class="box-tcd--title">
-                <div class="left">
-                  <div class="box-icon-clr beeswax">
-                    <div class="info">
-                      <p class="text-14-smb">Mục tiêu tuần này</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="right"></div>
-              </div>
-              <div class="box-tcd--content">
-                <div class="ct-progress-db">
-                  <div
-                    v-for="goal in weeklyGoals"
-                    :key="goal.title"
-                    class="progress-date-time"
-                  >
-                    <div class="progress-content-dt">
-                      <p class="text-size-12-rgl txt-gray">{{ goal.title }}</p>
-                      <p class="text-size-12-medium" :class="goal.textClass">
-                        {{ goal.value }}
-                      </p>
-                    </div>
-                    <div class="progress-frame-dt">
-                      <div
-                        class="progress-bar-dt"
-                        :class="goal.barClass"
-                        :style="{ width: `${goal.percent}%` }"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="ct-goal-label">
-                  <div class="box-label-warning">
-                    <div class="icon">
-                      <img
-                        src="/img-fix/icon/icon-thin-shield-green.svg"
-                        alt=""
-                      />
-                    </div>
-                    <p class="text-11-rgl txt-brown">{{ weeklySummary }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="box-title-color-db">
-              <div class="box-tcd--title">
-                <div class="left">
-                  <div class="box-icon-clr linear-bg-sb">
-                    <div class="info">
-                      <p class="text-14-smb">Tổng quan kho</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="box-tcd--content">
-                <div class="inventory-summary">
-                  <div class="summary-row">
-                    <p class="text-size-12-rgl txt-gray">Tổng tồn</p>
-                    <p class="text-size-13-medium">
-                      {{ totalInventoryQuantity }} đơn vị
-                    </p>
-                  </div>
-                  <div class="summary-row">
-                    <p class="text-size-12-rgl txt-gray">
-                      Giá trị tồn ước tính
-                    </p>
-                    <p class="text-size-13-medium txt-blue">
-                      {{ formatCurrency(totalInventoryValue) }}
-                    </p>
-                  </div>
-                  <div class="summary-row">
-                    <p class="text-size-12-rgl txt-gray">Sản phẩm hết hàng</p>
-                    <p class="text-size-13-medium txt-brown">
-                      {{ outOfStockCount }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="box-title-color-db">
-              <div class="box-tcd--title">
-                <div class="left">
-                  <div class="box-icon-clr beeswax">
-                    <div class="info">
-                      <p class="text-14-smb">Sản phẩm tồn nhiều</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="right">
-                  <NuxtLink to="/inventory-balances" class="btn-frame-text"
-                    >Xem kho</NuxtLink
-                  >
-                </div>
-              </div>
-              <div class="box-tcd--content">
-                <div v-if="topInventoryProducts.length" class="lst-job-tr">
-                  <div
-                    v-for="item in topInventoryProducts"
-                    :key="item.id"
-                    class="tr-job-now stock-row"
-                  >
-                    <div class="left">
-                      <div class="icon stock-rank">
-                        <p>{{ item.rank }}</p>
-                      </div>
-                      <div class="info">
-                        <p class="text-size-13-medium">
-                          {{ item.product?.name || "Sản phẩm chưa xác định" }}
-                        </p>
-                        <div class="lst-contract-meta">
-                          <p class="txt-contract-meta">
-                            {{ item.product?.sku || "---" }}
-                          </p>
-                          <p class="txt-contract-meta">
-                            {{
-                              item.product?.category?.name || "Chưa phân loại"
-                            }}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="right">
-                      <p class="text-size-12-medium txt-blue">
-                        {{ item.quantity }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="empty-dashboard-row">
-                  <p class="text-size-13-rgl">Chưa có dữ liệu tồn kho.</p>
                 </div>
               </div>
             </div>
           </div>
+
+          <div class="box-title-color-db">
+            <div class="box-tcd--title">
+              <div class="left">
+                <div class="box-icon-clr beeswax">
+                  <div class="info">
+                    <p class="text-14-smb">Mục tiêu tuần này</p>
+                  </div>
+                </div>
+              </div>
+              <div class="right"></div>
+            </div>
+            <div class="box-tcd--content">
+              <div class="ct-progress-db">
+                <div
+                  v-for="goal in weeklyGoals"
+                  :key="goal.title"
+                  class="progress-date-time"
+                >
+                  <div class="progress-content-dt">
+                    <p class="text-size-12-rgl txt-gray">{{ goal.title }}</p>
+                    <p class="text-size-12-medium" :class="goal.textClass">
+                      {{ goal.value }}
+                    </p>
+                  </div>
+                  <div class="progress-frame-dt">
+                    <div
+                      class="progress-bar-dt"
+                      :class="goal.barClass"
+                      :style="{ width: `${goal.percent}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <div class="ct-goal-label">
+                <div class="box-label-warning">
+                  <div class="icon">
+                    <img
+                      src="/img-fix/icon/icon-thin-shield-green.svg"
+                      alt=""
+                    />
+                  </div>
+                  <p class="text-11-rgl txt-brown">{{ weeklySummary }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box-title-color-db">
+            <div class="box-tcd--title">
+              <div class="left">
+                <div class="box-icon-clr linear-bg-sb">
+                  <div class="info">
+                    <p class="text-14-smb">Tổng quan kho</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="box-tcd--content">
+              <div class="inventory-summary">
+                <div class="summary-row">
+                  <p class="text-size-12-rgl txt-gray">Tổng tồn</p>
+                  <p class="text-size-13-medium">
+                    {{ totalInventoryQuantity }} đơn vị
+                  </p>
+                </div>
+                <div class="summary-row">
+                  <p class="text-size-12-rgl txt-gray">Giá trị tồn ước tính</p>
+                  <p class="text-size-13-medium txt-blue">
+                    {{ formatCurrency(totalInventoryValue) }}
+                  </p>
+                </div>
+                <div class="summary-row">
+                  <p class="text-size-12-rgl txt-gray">Sản phẩm hết hàng</p>
+                  <p class="text-size-13-medium txt-brown">
+                    {{ outOfStockCount }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="box-title-color-db">
+            <div class="box-tcd--title">
+              <div class="left">
+                <div class="box-icon-clr beeswax">
+                  <div class="info">
+                    <p class="text-14-smb">Sản phẩm tồn nhiều</p>
+                  </div>
+                </div>
+              </div>
+              <div class="right">
+                <NuxtLink to="/inventory-balances" class="btn-frame-text"
+                  >Xem kho</NuxtLink
+                >
+              </div>
+            </div>
+            <div class="box-tcd--content">
+              <div v-if="topInventoryProducts.length" class="lst-job-tr">
+                <div
+                  v-for="item in topInventoryProducts"
+                  :key="item.id"
+                  class="tr-job-now stock-row"
+                >
+                  <div class="left">
+                    <div class="icon stock-rank">
+                      <p>{{ item.rank }}</p>
+                    </div>
+                    <div class="info">
+                      <p class="text-size-13-medium">
+                        {{ item.product?.name || "Sản phẩm chưa xác định" }}
+                      </p>
+                      <div class="lst-contract-meta">
+                        <p class="txt-contract-meta">
+                          {{ item.product?.sku || "---" }}
+                        </p>
+                        <p class="txt-contract-meta">
+                          {{ item.product?.category?.name || "Chưa phân loại" }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="right">
+                    <p class="text-size-12-medium txt-blue">
+                      {{ item.quantity }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="empty-dashboard-row">
+                <p class="text-size-13-rgl">Chưa có dữ liệu tồn kho.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -521,8 +514,9 @@ interface Account {
 
 interface Category {
   id: number;
-  title: string;
-  desc: string | null;
+  name?: string | null;
+  title?: string | null;
+  desc?: string | null;
 }
 
 interface Supplier {
@@ -604,28 +598,24 @@ const purchaseRoles = [
   "ROLE_PURCHASER",
   "ROLE_MANAGER",
   "ROLE_ACCOUNTANT",
-  "ROLE_THU_KHO",
 ];
 const transferRoles = [
   "ROLE_ADMIN",
   "ROLE_WAREHOUSE",
   "ROLE_MANAGER",
   "ROLE_SHIPPER",
-  "ROLE_THU_KHO",
 ];
 const inventoryRoles = [
   "ROLE_ADMIN",
   "ROLE_WAREHOUSE",
   "ROLE_MANAGER",
   "ROLE_ACCOUNTANT",
-  "ROLE_THU_KHO",
 ];
 const catalogRoles = [
   "ROLE_ADMIN",
   "ROLE_PURCHASER",
   "ROLE_WAREHOUSE",
   "ROLE_MANAGER",
-  "ROLE_THU_KHO",
 ];
 const financeRoles = ["ROLE_ADMIN", "ROLE_ACCOUNTANT"];
 const adminManagerRoles = ["ROLE_ADMIN", "ROLE_MANAGER"];
@@ -712,7 +702,6 @@ const primaryRole = computed(() => {
   const roleMap: Record<string, string> = {
     ROLE_ADMIN: "Quản trị hệ thống",
     ROLE_USER: "Nhân viên",
-    ROLE_THU_KHO: "Thủ kho",
     ROLE_WAREHOUSE: "Thủ kho",
     ROLE_PURCHASER: "Mua hàng",
     ROLE_SALES: "Kinh doanh",
@@ -741,7 +730,7 @@ const rolePermissionSummary = computed(() => {
   if (hasAnyRole(["ROLE_PURCHASER"])) {
     return "Bạn có thể tạo đơn mua nháp và theo dõi các đơn do mình phụ trách.";
   }
-  if (hasAnyRole(["ROLE_WAREHOUSE", "ROLE_THU_KHO"])) {
+  if (hasAnyRole(["ROLE_WAREHOUSE"])) {
     return "Bạn có thể tạo phiếu điều chuyển và theo dõi dữ liệu kho được phân quyền.";
   }
   if (hasAnyRole(["ROLE_SHIPPER"])) {
@@ -1066,7 +1055,8 @@ const recentActivities = computed(() => {
   return [...sales, ...purchases]
     .sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime(),
     )
     .slice(0, 6);
 });

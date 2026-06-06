@@ -111,27 +111,15 @@
                         </p>
                       </div>
                       <div class="imt-content-table">
-                        <div class="ct-dots-6" v-if="po.status === 'COMPLETED'">
-                          <div class="txt-wth-dots blue">
-                            <div class="custom-status-dot"></div>
-                            <p class="txt-m-content-table">Đã hoàn thành</p>
-                          </div>
-                        </div>
-                        <div
-                          class="ct-dots-6"
-                          v-else-if="po.status === 'DRAFT'"
-                        >
-                          <div class="txt-wth-dots orange-txt">
+                        <div class="ct-dots-6">
+                          <div
+                            class="txt-wth-dots"
+                            :class="getPurchaseStatusClass(po.status)"
+                          >
                             <div class="custom-status-dot"></div>
                             <p class="txt-m-content-table">
-                              Bản nháp
+                              {{ formatPurchaseStatus(po.status) }}
                             </p>
-                          </div>
-                        </div>
-                        <div class="ct-dots-6" v-else>
-                          <div class="txt-wth-dots d-red-txt">
-                            <div class="custom-status-dot"></div>
-                            <p class="txt-m-content-table">{{ po.status }}</p>
                           </div>
                         </div>
                       </div>
@@ -172,7 +160,7 @@
                               >
                                 <a
                                   href="javascript:;"
-                                  @click="handleCompleteOrder(po.id)"
+                                  @click="handleApproveOrder(po.id)"
                                 >
                                   <span class="icon"
                                     ><img
@@ -182,10 +170,58 @@
                                   Duyệt đơn
                                 </a>
                               </div>
+                              <div
+                                class="imt-action"
+                                v-if="po.status === 'APPROVED' && canHandlePurchaseDelivery"
+                              >
+                                <a
+                                  href="javascript:;"
+                                  @click="handleStartDelivery(po.id)"
+                                >
+                                  <span class="icon"
+                                    ><img
+                                      src="/img-fix/icon/icon-topbar-reload.svg"
+                                      alt=""
+                                  /></span>
+                                  Bắt đầu lấy hàng
+                                </a>
+                              </div>
+                              <div
+                                class="imt-action"
+                                v-if="po.status === 'PROCESSING' && canHandlePurchaseDelivery"
+                              >
+                                <a
+                                  href="javascript:;"
+                                  @click="handleConfirmDelivery(po.id)"
+                                >
+                                  <span class="icon"
+                                    ><img
+                                      src="/img-fix/icon/icon-checked-chat.svg"
+                                      alt=""
+                                  /></span>
+                                  Xác nhận hàng về
+                                </a>
+                              </div>
+                              <div
+                                class="imt-action"
+                                v-if="po.status === 'PROCESSING' && canCompletePurchaseOrder"
+                              >
+                                <a
+                                  href="javascript:;"
+                                  @click="handleCompleteOrder(po.id)"
+                                >
+                                  <span class="icon"
+                                    ><img
+                                      src="/img-fix/icon/icon-black-checked.svg"
+                                      alt=""
+                                  /></span>
+                                  Hoàn thành nhập kho
+                                </a>
+                              </div>
 
                               <div
                                 class="imt-action delete-action"
-                                v-if="po.status === 'DRAFT' && canCancelPurchaseOrder"
+                                v-if="canCancelPurchaseOrderStatus(po.status)"
                               >
                                 <a
                                   href="javascript:;"
@@ -196,7 +232,7 @@
                                       src="/img-fix/icon/icon-delete-popup.svg"
                                       alt=""
                                   /></span>
-                                  Xóa đơn nháp
+                                  {{ po.status === 'DRAFT' ? 'Xóa đơn nháp' : 'Hủy đơn' }}
                                 </a>
                               </div>
                             </div>
@@ -644,17 +680,14 @@
                     <div class="right ct-product-title">
                       <div class="ct-label-new">
                         <div
-                          class="label-table-new gray-blue"
-                          v-if="selectedOrder.status === 'COMPLETED'"
+                          class="label-table-new"
+                          :class="getPurchaseStatusLabelClass(selectedOrder.status)"
                         >
-                          <p class="text-size-13-medium text-blue">Đã duyệt</p>
-                        </div>
-                        <div
-                          class="label-table-new bg-orange-light"
-                          v-else-if="selectedOrder.status === 'DRAFT'"
-                        >
-                          <p class="text-size-13-medium text-orange">
-                            Đơn nháp
+                          <p
+                            class="text-size-13-medium"
+                            :class="getPurchaseStatusTextClass(selectedOrder.status)"
+                          >
+                            {{ formatPurchaseStatus(selectedOrder.status) }}
                           </p>
                         </div>
                       </div>
@@ -1002,9 +1035,45 @@
                 <a
                   href="javascript:;"
                   class="btn-frame-color primary"
-                  @click="handleCompleteOrder(selectedOrder.id)"
+                  @click="handleApproveOrder(selectedOrder.id)"
                 >
                   <p class="text-size-13-rgl">Duyệt đơn</p>
+                </a>
+              </div>
+              <div
+                class="btn-create-group"
+                v-if="selectedOrder?.status === 'APPROVED' && canHandlePurchaseDelivery"
+              >
+                <a
+                  href="javascript:;"
+                  class="btn-frame-color primary"
+                  @click="handleStartDelivery(selectedOrder.id)"
+                >
+                  <p class="text-size-13-rgl">Bắt đầu lấy hàng</p>
+                </a>
+              </div>
+              <div
+                class="btn-create-group"
+                v-if="selectedOrder?.status === 'PROCESSING' && canHandlePurchaseDelivery"
+              >
+                <a
+                  href="javascript:;"
+                  class="btn-frame-color primary"
+                  @click="handleConfirmDelivery(selectedOrder.id)"
+                >
+                  <p class="text-size-13-rgl">Xác nhận hàng về</p>
+                </a>
+              </div>
+              <div
+                class="btn-create-group"
+                v-if="selectedOrder?.status === 'PROCESSING' && canCompletePurchaseOrder"
+              >
+                <a
+                  href="javascript:;"
+                  class="btn-frame-color primary"
+                  @click="handleCompleteOrder(selectedOrder.id)"
+                >
+                  <p class="text-size-13-rgl">Hoàn thành nhập kho</p>
                 </a>
               </div>
             </div>
@@ -1059,7 +1128,7 @@ interface PurchaseOrderItem {
   productId: number | "";
   productName?: string;
   productCode?: string;
-  supplier?: Supplier;
+  supplier?: Supplier | null;
   unit: string;
   quantity: number;
   price: number;
@@ -1096,7 +1165,10 @@ const filterFields = [
     type: "select" as const,
     options: [
       { label: "Bản nháp", value: "DRAFT" },
+      { label: "Đã duyệt", value: "APPROVED" },
+      { label: "Đang lấy hàng", value: "PROCESSING" },
       { label: "Đã hoàn thành", value: "COMPLETED" },
+      { label: "Đã hủy", value: "CANCELLED" },
     ],
   },
   {
@@ -1135,7 +1207,47 @@ const canCreatePurchaseOrder = computed(() =>
 const canApprovePurchaseOrder = computed(() =>
   hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
 );
-const canCancelPurchaseOrder = computed(() => hasAnyRole(["ROLE_ADMIN"]));
+const canHandlePurchaseDelivery = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_SHIPPER"]),
+);
+const canCompletePurchaseOrder = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_ACCOUNTANT"]),
+);
+const canCancelPurchaseOrder = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+);
+const canCancelPurchaseOrderStatus = (status: string) =>
+  canCancelPurchaseOrder.value &&
+  ["DRAFT", "APPROVED", "PROCESSING"].includes(status);
+
+const formatPurchaseStatus = (status: string | null | undefined) => {
+  const statusMap: Record<string, string> = {
+    DRAFT: "Bản nháp",
+    APPROVED: "Đã duyệt",
+    PROCESSING: "Đang lấy hàng",
+    COMPLETED: "Đã hoàn thành",
+    CANCELLED: "Đã hủy",
+    CANCELED: "Đã hủy",
+  };
+
+  return status ? statusMap[status] || status : "---";
+};
+
+const getPurchaseStatusClass = (status: string | null | undefined) => {
+  if (status === "COMPLETED" || status === "APPROVED") return "blue";
+  if (status === "DRAFT" || status === "PROCESSING") return "orange-txt";
+  return "d-red-txt";
+};
+
+const getPurchaseStatusLabelClass = (status: string | null | undefined) => {
+  if (status === "DRAFT" || status === "PROCESSING") return "bg-orange-light";
+  return "gray-blue";
+};
+
+const getPurchaseStatusTextClass = (status: string | null | undefined) => {
+  if (status === "DRAFT" || status === "PROCESSING") return "text-orange";
+  return "text-blue";
+};
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -1460,12 +1572,11 @@ const getFirstSupplier = (order: PurchaseOrder | null) => {
   return order.items[0].supplier;
 };
 
-const handleCompleteOrder = async (id: number) => {
+const handleApproveOrder = async (id: number) => {
   const isConfirm = await confirm({
-    confirmText: "Hoàn thành",
-    message:
-      "Bạn có chắc chắn muốn hoàn thành đơn này? Hành động này sẽ cộng số lượng vào kho và không thể hoàn tác.",
-    title: "Hoàn thành đơn nhập",
+    confirmText: "Duyệt đơn",
+    message: "Bạn có chắc chắn muốn duyệt đơn nhập hàng này?",
+    title: "Duyệt đơn nhập hàng",
     tone: "warning",
   });
   if (!isConfirm) return;
@@ -1479,12 +1590,98 @@ const handleCompleteOrder = async (id: number) => {
     const backEndMsg =
       completeError.value.data?.title ||
       completeError.value.data?.message ||
-      "Không thể hoàn thành đơn hàng";
+      "Không thể duyệt đơn nhập hàng";
     toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
     return;
   }
 
-  toast.fromMessage("Hoàn thành đơn hàng thành công!");
+  toast.fromMessage("Duyệt đơn nhập hàng thành công!");
+  openActionId.value = null;
+  if (isDetailPopupOpen.value) closeDetailPopup();
+  await refreshOrders();
+  await refreshInventoryBalances();
+};
+
+const handleStartDelivery = async (id: number) => {
+  const isConfirm = await confirm({
+    confirmText: "Bắt đầu",
+    message: "Bạn có chắc chắn muốn bắt đầu lấy hàng cho đơn nhập này?",
+    title: "Bắt đầu lấy hàng",
+    tone: "warning",
+  });
+  if (!isConfirm) return;
+
+  const { error } = await useAPI(`/purchase-orders/${id}/start-delivery`, {
+    method: "PUT",
+  });
+
+  if (error.value) {
+    const backEndMsg =
+      error.value.data?.title ||
+      error.value.data?.message ||
+      "Không thể bắt đầu lấy hàng";
+    toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
+    return;
+  }
+
+  toast.fromMessage("Đã bắt đầu lấy hàng!");
+  openActionId.value = null;
+  if (isDetailPopupOpen.value) closeDetailPopup();
+  await refreshOrders();
+};
+
+const handleConfirmDelivery = async (id: number) => {
+  const isConfirm = await confirm({
+    confirmText: "Xác nhận",
+    message: "Bạn có chắc chắn muốn xác nhận hàng đã về kho?",
+    title: "Xác nhận hàng về",
+    tone: "warning",
+  });
+  if (!isConfirm) return;
+
+  const { error } = await useAPI(`/purchase-orders/${id}/confirm-delivery`, {
+    method: "PUT",
+  });
+
+  if (error.value) {
+    const backEndMsg =
+      error.value.data?.title ||
+      error.value.data?.message ||
+      "Không thể xác nhận hàng về";
+    toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
+    return;
+  }
+
+  toast.fromMessage("Xác nhận hàng về thành công!");
+  openActionId.value = null;
+  if (isDetailPopupOpen.value) closeDetailPopup();
+  await refreshOrders();
+};
+
+const handleCompleteOrder = async (id: number) => {
+  const isConfirm = await confirm({
+    confirmText: "Hoàn thành",
+    message:
+      "Bạn có chắc chắn muốn hoàn thành nhập kho? Hành động này sẽ chốt công nợ và không thể hoàn tác.",
+    title: "Hoàn thành nhập kho",
+    tone: "warning",
+  });
+  if (!isConfirm) return;
+
+  const { error } = await useAPI(`/purchase-orders/${id}/complete`, {
+    method: "PUT",
+  });
+
+  if (error.value) {
+    const backEndMsg =
+      error.value.data?.title ||
+      error.value.data?.message ||
+      "Không thể hoàn thành nhập kho";
+    toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
+    return;
+  }
+
+  toast.fromMessage("Hoàn thành nhập kho thành công!");
   openActionId.value = null;
   if (isDetailPopupOpen.value) closeDetailPopup();
   await refreshOrders();
@@ -1493,7 +1690,7 @@ const handleCompleteOrder = async (id: number) => {
 
 const handleDeleteOrder = async (id: number) => {
   const isConfirm = await confirmDelete(
-    "Bạn có chắc chắn muốn xóa bản nháp đơn nhập hàng này?",
+    "Bạn có chắc chắn muốn hủy đơn nhập hàng này?",
   );
   if (!isConfirm) return;
 
@@ -1502,12 +1699,17 @@ const handleDeleteOrder = async (id: number) => {
   });
 
   if (deleteError.value) {
-    toast.fromMessage("Không thể xóa đơn hàng");
+    const backEndMsg =
+      deleteError.value.data?.title ||
+      deleteError.value.data?.message ||
+      "Không thể hủy đơn nhập hàng";
+    toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
     return;
   }
 
-  toast.fromMessage("Xóa đơn hàng thành công!");
+  toast.fromMessage("Hủy đơn nhập hàng thành công!");
   openActionId.value = null;
+  if (isDetailPopupOpen.value) closeDetailPopup();
   await refreshOrders();
 };
 

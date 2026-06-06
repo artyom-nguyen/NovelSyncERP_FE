@@ -176,7 +176,7 @@
                               >
                                 <a
                                   href="javascript:;"
-                                  @click="handleCompleteOrder(so.id)"
+                                  @click="handleApproveOrder(so.id)"
                                 >
                                   <span class="icon"
                                     ><img
@@ -187,8 +187,56 @@
                                 </a>
                               </div>
                               <div
+                                class="imt-action"
+                                v-if="so.status === 'APPROVED' && canHandleSalesDelivery"
+                              >
+                                <a
+                                  href="javascript:;"
+                                  @click="handleStartDelivery(so.id)"
+                                >
+                                  <span class="icon"
+                                    ><img
+                                      src="/img-fix/icon/icon-topbar-reload.svg"
+                                      alt=""
+                                  /></span>
+                                  Bắt đầu giao
+                                </a>
+                              </div>
+                              <div
+                                class="imt-action"
+                                v-if="so.status === 'PROCESSING' && canHandleSalesDelivery"
+                              >
+                                <a
+                                  href="javascript:;"
+                                  @click="handleConfirmDelivery(so.id)"
+                                >
+                                  <span class="icon"
+                                    ><img
+                                      src="/img-fix/icon/icon-checked-chat.svg"
+                                      alt=""
+                                  /></span>
+                                  Xác nhận giao
+                                </a>
+                              </div>
+                              <div
+                                class="imt-action"
+                                v-if="so.status === 'PROCESSING' && canCreateSalesPayment"
+                              >
+                                <a
+                                  href="javascript:;"
+                                  @click="handleCreateVnPayUrl(so.id)"
+                                >
+                                  <span class="icon"
+                                    ><img
+                                      src="/img-fix/icon/icon-info-duetone.svg"
+                                      alt=""
+                                  /></span>
+                                  Tạo QR thanh toán
+                                </a>
+                              </div>
+                              <div
                                 class="imt-action delete-action"
-                                v-if="so.status === 'DRAFT' && canCancelSalesOrder"
+                                v-if="canCancelSalesOrderStatus(so.status)"
                               >
                                 <a
                                   href="javascript:;"
@@ -199,7 +247,7 @@
                                       src="/img-fix/icon/icon-delete-popup.svg"
                                       alt=""
                                   /></span>
-                                  Xóa đơn nháp
+                                  {{ so.status === 'DRAFT' ? 'Xóa đơn nháp' : 'Hủy đơn' }}
                                 </a>
                               </div>
                             </div>
@@ -966,9 +1014,45 @@
                 <a
                   href="javascript:;"
                   class="btn-frame-color primary"
-                  @click="handleCompleteOrder(selectedOrder.id)"
+                  @click="handleApproveOrder(selectedOrder.id)"
                 >
                   <p class="text-size-13-rgl">Duyệt xuất kho</p>
+                </a>
+              </div>
+              <div
+                class="btn-create-group"
+                v-if="selectedOrder?.status === 'APPROVED' && canHandleSalesDelivery"
+              >
+                <a
+                  href="javascript:;"
+                  class="btn-frame-color primary"
+                  @click="handleStartDelivery(selectedOrder.id)"
+                >
+                  <p class="text-size-13-rgl">Bắt đầu giao</p>
+                </a>
+              </div>
+              <div
+                class="btn-create-group"
+                v-if="selectedOrder?.status === 'PROCESSING' && canHandleSalesDelivery"
+              >
+                <a
+                  href="javascript:;"
+                  class="btn-frame-color primary"
+                  @click="handleConfirmDelivery(selectedOrder.id)"
+                >
+                  <p class="text-size-13-rgl">Xác nhận giao</p>
+                </a>
+              </div>
+              <div
+                class="btn-create-group"
+                v-if="selectedOrder?.status === 'PROCESSING' && canCreateSalesPayment"
+              >
+                <a
+                  href="javascript:;"
+                  class="btn-frame-color primary"
+                  @click="handleCreateVnPayUrl(selectedOrder.id)"
+                >
+                  <p class="text-size-13-rgl">Tạo QR thanh toán</p>
                 </a>
               </div>
             </div>
@@ -1150,7 +1234,18 @@ const canCreateSalesOrder = computed(() =>
 const canApproveSalesOrder = computed(() =>
   hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
 );
-const canCancelSalesOrder = computed(() => hasAnyRole(["ROLE_ADMIN"]));
+const canHandleSalesDelivery = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_SHIPPER"]),
+);
+const canCreateSalesPayment = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_SHIPPER", "ROLE_ACCOUNTANT"]),
+);
+const canCancelSalesOrder = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+);
+const canCancelSalesOrderStatus = (status: string) =>
+  canCancelSalesOrder.value &&
+  ["DRAFT", "APPROVED", "PROCESSING"].includes(status);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -1571,7 +1666,7 @@ const closeDetailPopup = () => {
   selectedOrder.value = null;
 };
 
-const handleCompleteOrder = async (id: number) => {
+const handleApproveOrder = async (id: number) => {
   const isConfirm = await confirm({
     confirmText: "Duyệt đơn",
     message:
@@ -1601,9 +1696,89 @@ const handleCompleteOrder = async (id: number) => {
   await refreshOrders();
 };
 
+const handleStartDelivery = async (id: number) => {
+  const isConfirm = await confirm({
+    confirmText: "Bắt đầu giao",
+    message:
+      "Bạn có chắc chắn muốn chuyển đơn này sang trạng thái đang giao?",
+    title: "Bắt đầu giao hàng",
+    tone: "warning",
+  });
+  if (!isConfirm) return;
+
+  const { error } = await useAPI(`/sales-orders/${id}/start-delivery`, {
+    method: "PUT",
+  });
+
+  if (error.value) {
+    const backEndMsg =
+      error.value.data?.title ||
+      error.value.data?.message ||
+      "Không thể bắt đầu giao hàng";
+    toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
+    return;
+  }
+
+  toast.fromMessage("Đơn hàng đã chuyển sang trạng thái đang giao!");
+  openActionId.value = null;
+  if (isDetailPopupOpen.value) closeDetailPopup();
+  await refreshOrders();
+};
+
+const handleConfirmDelivery = async (id: number) => {
+  const isConfirm = await confirm({
+    confirmText: "Xác nhận",
+    message:
+      "Bạn có chắc chắn muốn xác nhận đơn hàng đã giao tới khách?",
+    title: "Xác nhận giao hàng",
+    tone: "warning",
+  });
+  if (!isConfirm) return;
+
+  const { error } = await useAPI(`/sales-orders/${id}/confirm-delivery`, {
+    method: "PUT",
+  });
+
+  if (error.value) {
+    const backEndMsg =
+      error.value.data?.title ||
+      error.value.data?.message ||
+      "Không thể xác nhận giao hàng";
+    toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
+    return;
+  }
+
+  toast.fromMessage("Đã xác nhận giao hàng và thông báo cho kế toán!");
+  openActionId.value = null;
+  if (isDetailPopupOpen.value) closeDetailPopup();
+  await refreshOrders();
+};
+
+const handleCreateVnPayUrl = async (id: number) => {
+  const { data, error } = await useAPI<{ url: string }>(
+    `/payments/create-vnpay-url?orderId=${id}`,
+    { method: "POST" },
+  );
+
+  if (error.value || !data.value?.url) {
+    const backEndMsg =
+      error.value?.data?.title ||
+      error.value?.data?.message ||
+      "Không thể tạo QR thanh toán";
+    toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
+    return;
+  }
+
+  if (process.client) {
+    window.open(data.value.url, "_blank", "noopener,noreferrer");
+  }
+  toast.fromMessage("Đã tạo liên kết thanh toán VNPay.");
+  openActionId.value = null;
+};
+
 const handleDeleteOrder = async (id: number) => {
   const isConfirm = await confirmDelete(
-    "Bạn có chắc chắn muốn xóa bản nháp đơn hàng này?",
+    "Bạn có chắc chắn muốn hủy đơn hàng này?",
   );
   if (!isConfirm) return;
 
@@ -1612,12 +1787,17 @@ const handleDeleteOrder = async (id: number) => {
   });
 
   if (deleteError.value) {
-    toast.fromMessage("Không thể xóa đơn hàng");
+    const backEndMsg =
+      deleteError.value.data?.title ||
+      deleteError.value.data?.message ||
+      "Không thể hủy đơn hàng";
+    toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
     return;
   }
 
-  toast.fromMessage("Xóa đơn nháp thành công!");
+  toast.fromMessage("Hủy đơn hàng thành công!");
   openActionId.value = null;
+  if (isDetailPopupOpen.value) closeDetailPopup();
   await refreshOrders();
 };
 

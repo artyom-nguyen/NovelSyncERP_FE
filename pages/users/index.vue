@@ -353,14 +353,13 @@
                         v-model="formData.authority"
                         :disabled="!isEditMode"
                       >
-                        <option value="ROLE_ADMIN">Admin</option>
-                        <option value="ROLE_USER">User</option>
-                        <option value="ROLE_SALES">Sales</option>
-                        <option value="ROLE_PURCHASER">Purchaser</option>
-                        <option value="ROLE_WAREHOUSE">Warehouse</option>
-                        <option value="ROLE_MANAGER">Manager</option>
-                        <option value="ROLE_ACCOUNTANT">Accountant</option>
-                        <option value="ROLE_SHIPPER">Shipper</option>
+                        <option
+                          v-for="role in roleOptions"
+                          :key="role.value"
+                          :value="role.value"
+                        >
+                          {{ role.label }}
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -448,7 +447,42 @@ const filters = ref<Record<string, string | number>>({
   status: "",
   authority: "",
 });
-const filterFields = [
+
+const roleLabels: Record<string, string> = {
+  ROLE_ADMIN: "Admin",
+  ROLE_USER: "User",
+  ROLE_SALES: "Sales",
+  ROLE_PURCHASER: "Purchaser",
+  ROLE_WAREHOUSE: "Warehouse",
+  ROLE_MANAGER: "Manager",
+  ROLE_ACCOUNTANT: "Accountant",
+  ROLE_SHIPPER: "Shipper",
+};
+
+const fallbackAuthorityNames = [
+  "ROLE_ADMIN",
+  "ROLE_USER",
+  "ROLE_SALES",
+  "ROLE_PURCHASER",
+  "ROLE_WAREHOUSE",
+  "ROLE_MANAGER",
+  "ROLE_ACCOUNTANT",
+];
+
+const { data: authorities } = await useAPI<string[]>("/authorities");
+
+const roleOptions = computed(() => {
+  const names = authorities.value?.length
+    ? authorities.value
+    : fallbackAuthorityNames;
+
+  return names.map((value) => ({
+    label: roleLabels[value] || value,
+    value,
+  }));
+});
+
+const filterFields = computed(() => [
   {
     key: "status",
     label: "Trạng thái",
@@ -462,18 +496,9 @@ const filterFields = [
     key: "authority",
     label: "Quyền",
     type: "select" as const,
-    options: [
-      { label: "Admin", value: "ROLE_ADMIN" },
-      { label: "User", value: "ROLE_USER" },
-      { label: "Sales", value: "ROLE_SALES" },
-      { label: "Purchaser", value: "ROLE_PURCHASER" },
-      { label: "Warehouse", value: "ROLE_WAREHOUSE" },
-      { label: "Manager", value: "ROLE_MANAGER" },
-      { label: "Accountant", value: "ROLE_ACCOUNTANT" },
-      { label: "Shipper", value: "ROLE_SHIPPER" },
-    ],
+    options: roleOptions.value,
   },
-];
+]);
 
 const defaultForm: UserFormPayload = {
   id: undefined,
@@ -708,17 +733,7 @@ const formatDate = (dateStr: string | null) => {
 };
 
 const formatRole = (role: string) => {
-  const roleMap: Record<string, string> = {
-    ROLE_ADMIN: "Admin",
-    ROLE_USER: "User",
-    ROLE_SALES: "Sales",
-    ROLE_PURCHASER: "Purchaser",
-    ROLE_WAREHOUSE: "Warehouse",
-    ROLE_MANAGER: "Manager",
-    ROLE_ACCOUNTANT: "Accountant",
-    ROLE_SHIPPER: "Shipper",
-  };
-  return roleMap[role] || role;
+  return roleLabels[role] || role;
 };
 </script>
 

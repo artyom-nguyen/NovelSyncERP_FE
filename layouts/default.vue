@@ -368,7 +368,6 @@
                         'ROLE_WAREHOUSE',
                         'ROLE_MANAGER',
                         'ROLE_ACCOUNTANT',
-                        'ROLE_THU_KHO',
                       ])
                     "
                     class="item-nav-group-child"
@@ -449,7 +448,6 @@
                         'ROLE_PURCHASER',
                         'ROLE_WAREHOUSE',
                         'ROLE_MANAGER',
-                        'ROLE_THU_KHO',
                       ])
                     "
                     class="item-nav-group-child"
@@ -975,28 +973,24 @@ const purchaseRoles = [
   "ROLE_PURCHASER",
   "ROLE_MANAGER",
   "ROLE_ACCOUNTANT",
-  "ROLE_THU_KHO",
 ];
 const transferRoles = [
   "ROLE_ADMIN",
   "ROLE_WAREHOUSE",
   "ROLE_MANAGER",
   "ROLE_SHIPPER",
-  "ROLE_THU_KHO",
 ];
 const inventoryRoles = [
   "ROLE_ADMIN",
   "ROLE_WAREHOUSE",
   "ROLE_MANAGER",
   "ROLE_ACCOUNTANT",
-  "ROLE_THU_KHO",
 ];
 const catalogRoles = [
   "ROLE_ADMIN",
   "ROLE_PURCHASER",
   "ROLE_WAREHOUSE",
   "ROLE_MANAGER",
-  "ROLE_THU_KHO",
 ];
 const financeRoles = ["ROLE_ADMIN", "ROLE_ACCOUNTANT"];
 const adminManagerRoles = ["ROLE_ADMIN", "ROLE_MANAGER"];
@@ -1215,7 +1209,6 @@ const primaryRole = computed(() => {
   const roles: Record<string, string> = {
     ROLE_ADMIN: "Admin",
     ROLE_USER: "User",
-    ROLE_THU_KHO: "Thủ kho",
     ROLE_WAREHOUSE: "Thủ kho",
     ROLE_PURCHASER: "Nhân viên mua hàng",
     ROLE_SALES: "Sales",
