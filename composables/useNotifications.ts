@@ -22,7 +22,9 @@ export const useNotifications = async () => {
   let stompClient: Client | null = null;
 
   if (authToken.value) {
-    const { data } = await useAPI<NotificationDTO[]>("/notifications/my-latest");
+    const { data } = await useAPI<NotificationDTO[]>(
+      API_ENDPOINTS.notifications.latest,
+    );
     initialNotifs.value = data.value || [];
   }
 
@@ -114,14 +116,17 @@ export const useNotifications = async () => {
     isFetchingNotifications.value = true;
     try {
       syncFromStorage();
-      const data = await $fetch<NotificationDTO[]>("/notifications/my-latest", {
-        baseURL: config.public.apiBase,
-        headers: authToken.value
-          ? {
-              Authorization: `Bearer ${authToken.value}`,
-            }
-          : undefined,
-      });
+      const data = await $fetch<NotificationDTO[]>(
+        API_ENDPOINTS.notifications.latest,
+        {
+          baseURL: config.public.apiBase,
+          headers: authToken.value
+            ? {
+                Authorization: `Bearer ${authToken.value}`,
+              }
+            : undefined,
+        },
+      );
 
       mergeUnreadNotifications(data || []);
     } catch {
@@ -205,7 +210,7 @@ export const useNotifications = async () => {
 
   const markAsRead = async (ntf: NotificationDTO) => {
     if (ntf.isRead) return;
-    const { error } = await useAPI(`/notifications/${ntf.id}`, {
+    const { error } = await useAPI(API_ENDPOINTS.notifications.detail(ntf.id), {
       method: "PATCH",
       body: {
         id: ntf.id,
@@ -221,7 +226,7 @@ export const useNotifications = async () => {
   const markAllAsRead = async () => {
     const unreadNtfs = notifications.value.filter((n) => !n.isRead);
     for (const ntf of unreadNtfs) {
-      await useAPI(`/notifications/${ntf.id}`, {
+      await useAPI(API_ENDPOINTS.notifications.detail(ntf.id), {
         method: "PATCH",
         body: {
           id: ntf.id,

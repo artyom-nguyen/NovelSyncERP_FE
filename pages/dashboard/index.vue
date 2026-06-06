@@ -573,7 +573,7 @@ const today = new Date();
 const currentMonth = ref(today.getMonth());
 const currentYear = ref(today.getFullYear());
 
-const { data: account } = await useAPI<Account>("/account");
+const { data: account } = await useAPI<Account>(API_ENDPOINTS.account.me);
 const {
   adminManagerRoles,
   catalogRoles,
@@ -598,32 +598,32 @@ const canLoadPurchaseData = computed(() => hasAnyRole(purchaseRoles));
 const canLoadInventoryData = computed(() => hasAnyRole(inventoryRoles));
 
 const { data: products, refresh: refreshProducts } = await useAPI<Product[]>(
-  "/products",
+  API_ENDPOINTS.products.list,
   { immediate: canLoadCatalogData.value || canLoadInventoryData.value },
 );
 const { data: categories, refresh: refreshCategories } = await useAPI<
   Category[]
->("/categories", {
+>(API_ENDPOINTS.categories.list, {
   immediate: canLoadCatalogData.value,
 });
 const { data: suppliers, refresh: refreshSuppliers } = await useAPI<Supplier[]>(
-  "/suppliers",
+  API_ENDPOINTS.suppliers.list,
   {
     immediate: canLoadCatalogData.value,
   },
 );
 const { data: purchaseOrders, refresh: refreshPurchaseOrders } = await useAPI<
   Order[]
->("/purchase-orders", {
+>(API_ENDPOINTS.purchaseOrders.list, {
   immediate: canLoadPurchaseData.value,
 });
 const { data: salesOrders, refresh: refreshSalesOrders } = await useAPI<
   Order[]
->("/sales-orders", {
+>(API_ENDPOINTS.salesOrders.list, {
   immediate: canLoadSalesData.value,
 });
 const { data: inventoryBalances, refresh: refreshInventoryBalances } =
-  await useAPI<InventoryBalance[]>("/inventory-balances", {
+  await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.list, {
     immediate: canLoadInventoryData.value,
   });
 

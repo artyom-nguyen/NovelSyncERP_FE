@@ -431,10 +431,12 @@ const defaultForm: ProductFormPayload = {
 const formData = ref<ProductFormPayload>({ ...defaultForm });
 
 const { data: products, refresh: refreshProducts } =
-  await useAPI<Product[]>("/products");
+  await useAPI<Product[]>(API_ENDPOINTS.products.list);
 const { data: inventoryBalances, refresh: refreshInventoryBalances } =
-  await useAPI<InventoryBalance[]>("/inventory-balances?size=1000");
-const { data: categoriesData } = await useAPI<Category[]>("/categories");
+  await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged);
+const { data: categoriesData } = await useAPI<Category[]>(
+  API_ENDPOINTS.categories.list,
+);
 
 const filterFields = computed(() => [
   {
@@ -618,8 +620,8 @@ const handleSubmitProduct = async () => {
   }
 
   const apiUrl = isEditMode.value
-    ? `/products/${formData.value.id}`
-    : "/products";
+    ? API_ENDPOINTS.products.detail(formData.value.id || "")
+    : API_ENDPOINTS.products.list;
   const apiMethod = isEditMode.value ? "PUT" : "POST";
 
   const { error: submitError } = await useAPI(apiUrl, {
@@ -651,7 +653,7 @@ const handleDeleteProduct = async (id: number) => {
   const isConfirm = await confirmDelete("Bạn có chắc chắn muốn xóa sản phẩm này?");
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(`/products/${id}`, {
+  const { error: deleteError } = await useAPI(API_ENDPOINTS.products.detail(id), {
     method: "DELETE",
   });
 

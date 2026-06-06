@@ -76,7 +76,7 @@ const getActivationErrorMessage = (error: unknown) => {
 };
 
 const activateAccount = async (key: string) => {
-  await $fetch.raw("/activate", {
+  await $fetch.raw(API_ENDPOINTS.account.activate, {
     baseURL: config.public.apiBase,
     method: "GET",
     query: { key },

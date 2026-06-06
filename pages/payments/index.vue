@@ -305,10 +305,10 @@ const defaultForm: DisbursementForm = {
 const formData = ref<DisbursementForm>({ ...defaultForm });
 
 const { data: payments, refresh: refreshPayments } = await useAPI<Payment[]>(
-  "/payments?size=1000&eagerload=true&sort=id,desc",
+  API_ENDPOINTS.payments.listEager,
 );
 const { data: suppliersData } = await useAPI<PartnerRef[]>(
-  "/suppliers?size=1000&sort=id,asc",
+  API_ENDPOINTS.suppliers.listSorted,
 );
 
 const suppliers = computed(() => suppliersData.value || []);
@@ -391,7 +391,7 @@ const handleCreateDisbursement = async () => {
     note: formData.value.note.trim(),
   }).toString();
 
-  const { error } = await useAPI(`/payments/disbursement?${query}`, {
+  const { error } = await useAPI(API_ENDPOINTS.payments.disbursement(query), {
     method: "POST",
   });
 
@@ -408,7 +408,7 @@ const handleCreateDisbursement = async () => {
 };
 
 const handleApprove = async (id: number) => {
-  const { error } = await useAPI(`/payments/${id}/approve`, {
+  const { error } = await useAPI(API_ENDPOINTS.payments.approve(id), {
     method: "PUT",
   });
 

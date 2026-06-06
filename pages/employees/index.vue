@@ -391,16 +391,16 @@ const formData = ref<EmployeeForm>({ ...defaultForm });
 
 const { data: employees, refresh: refreshEmployees } = await useAPI<
   Employee[]
->("/employees?size=1000&eagerload=true&sort=id,asc");
+>(API_ENDPOINTS.employees.listEager);
 const { data: usersData, refresh: refreshUsers } = await useAPI<SimpleRef[]>(
-  "/users?size=1000&sort=id,asc",
+  API_ENDPOINTS.users.listSorted,
 );
 const { data: warehousesData, refresh: refreshWarehouses } = await useAPI<
   SimpleRef[]
->("/warehouses?size=1000&sort=id,asc");
+>(API_ENDPOINTS.warehouses.listSorted);
 const { data: departmentsData, refresh: refreshDepartments } = await useAPI<
   SimpleRef[]
->("/departments?size=1000&sort=id,asc");
+>(API_ENDPOINTS.departments.listSorted);
 
 const users = computed(() => usersData.value || []);
 const warehouses = computed(() => warehousesData.value || []);
@@ -507,7 +507,9 @@ const handleSubmitEmployee = async () => {
   };
 
   const { error } = await useAPI(
-    isEditMode.value ? `/employees/${formData.value.id}` : "/employees",
+    isEditMode.value
+      ? API_ENDPOINTS.employees.detail(formData.value.id || "")
+      : API_ENDPOINTS.employees.list,
     { method: isEditMode.value ? "PUT" : "POST", body: payload },
   );
 
@@ -533,7 +535,9 @@ const handleDeleteEmployee = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/employees/${id}`, { method: "DELETE" });
+  const { error } = await useAPI(API_ENDPOINTS.employees.detail(id), {
+    method: "DELETE",
+  });
 
   if (error.value) {
     toast.fromMessage(getApiErrorMessage(error.value, "Không thể xóa nhân viên"));

@@ -18,11 +18,11 @@ type APIData<T> = AsyncData<APIResponse<T> | null, FetchError | null>;
 type TypedUseFetch<T> = (url: string, options: APIFetchOptions<T>) => APIData<T>;
 
 const publicEndpoints = [
-  "/authenticate",
-  "/register",
-  "/activate",
-  "/account/reset-password/init",
-  "/account/reset-password/finish",
+  API_ENDPOINTS.account.authenticate,
+  API_ENDPOINTS.account.register,
+  API_ENDPOINTS.account.activate,
+  API_ENDPOINTS.account.resetPasswordInit,
+  API_ENDPOINTS.account.resetPasswordFinish,
 ];
 
 export const useAPI = <T>(

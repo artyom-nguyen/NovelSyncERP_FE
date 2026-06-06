@@ -1184,13 +1184,13 @@ const filterFields = [
 ];
 
 const { data: purchaseOrders, refresh: refreshOrders } =
-  await useAPI<PurchaseOrder[]>("/purchase-orders");
-const { data: account } = await useAPI<any>("/account");
-const { data: products } = await useAPI<any[]>("/products");
-const { data: suppliers } = await useAPI<any[]>("/suppliers");
-const { data: warehouses } = await useAPI<any[]>("/warehouses");
+  await useAPI<PurchaseOrder[]>(API_ENDPOINTS.purchaseOrders.list);
+const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
+const { data: products } = await useAPI<any[]>(API_ENDPOINTS.products.list);
+const { data: suppliers } = await useAPI<any[]>(API_ENDPOINTS.suppliers.list);
+const { data: warehouses } = await useAPI<any[]>(API_ENDPOINTS.warehouses.list);
 const { data: inventoryBalances, refresh: refreshInventoryBalances } =
-  await useAPI<InventoryBalance[]>("/inventory-balances?size=1000");
+  await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged);
 const { createRoleChecker, getActionRoles, getUserRoles } =
   useRoutePermissions();
 
@@ -1483,7 +1483,7 @@ const submitOrder = async () => {
       })),
     };
 
-    const { error } = await useAPI<any>("/purchase-orders", {
+    const { error } = await useAPI<any>(API_ENDPOINTS.purchaseOrders.list, {
       method: "POST",
       body: payload,
     });
@@ -1517,7 +1517,7 @@ const openDetailPopup = async (id: number) => {
   activeDetailTab.value = "general";
 
   const { data: poData, error: poError } = await useAPI<PurchaseOrder>(
-    `/purchase-orders/${id}`,
+    API_ENDPOINTS.purchaseOrders.detail(id),
   );
 
   if (poError.value || !poData.value) {
@@ -1526,7 +1526,7 @@ const openDetailPopup = async (id: number) => {
   }
 
   const { data: linesData, error: linesError } = await useAPI<any[]>(
-    `/purchase-order-lines?size=1000`,
+    API_ENDPOINTS.purchaseOrderLines.listPaged,
   );
 
   if (linesError.value) {
@@ -1578,7 +1578,7 @@ const handleApproveOrder = async (id: number) => {
   if (!isConfirm) return;
 
   const { error: completeError } = await useAPI(
-    `/purchase-orders/${id}/approve`,
+    API_ENDPOINTS.purchaseOrders.approve(id),
     { method: "PUT" },
   );
 
@@ -1607,7 +1607,7 @@ const handleStartDelivery = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/purchase-orders/${id}/start-delivery`, {
+  const { error } = await useAPI(API_ENDPOINTS.purchaseOrders.startDelivery(id), {
     method: "PUT",
   });
 
@@ -1635,7 +1635,7 @@ const handleConfirmDelivery = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/purchase-orders/${id}/confirm-delivery`, {
+  const { error } = await useAPI(API_ENDPOINTS.purchaseOrders.confirmDelivery(id), {
     method: "PUT",
   });
 
@@ -1664,7 +1664,7 @@ const handleCompleteOrder = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/purchase-orders/${id}/complete`, {
+  const { error } = await useAPI(API_ENDPOINTS.purchaseOrders.complete(id), {
     method: "PUT",
   });
 
@@ -1690,7 +1690,7 @@ const handleDeleteOrder = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(`/purchase-orders/${id}/cancel`, {
+  const { error: deleteError } = await useAPI(API_ENDPOINTS.purchaseOrders.cancel(id), {
     method: "PUT",
   });
 

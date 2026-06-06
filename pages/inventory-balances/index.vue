@@ -430,7 +430,7 @@ const fetchBalances = async () => {
   pendingBalance.value = true;
 
   const { data, error } = await useAPI<InventoryBalance[]>(
-    "/inventory-balances?size=1000&sort=updatedAt,desc",
+    API_ENDPOINTS.inventoryBalances.listByUpdatedAt,
   );
 
   if (error.value) {
@@ -534,7 +534,7 @@ const openHistoryPopup = async (product: Product) => {
   openActionId.value = null;
 
   const { data, error } = await useAPI<InventoryTransaction[]>(
-    `/inventory-transactions?productId.equals=${product.id}&size=1000&sort=createdDate,desc`,
+    API_ENDPOINTS.inventoryTransactions.byProduct(product.id),
   );
 
   if (error.value) {

@@ -275,7 +275,7 @@ const handleRegister = async () => {
   isSubmitting.value = true;
 
   try {
-    const { error } = await useAPI("/register", {
+    const { error } = await useAPI(API_ENDPOINTS.account.register, {
       method: "POST",
       body: {
         login: form.value.login.trim(),

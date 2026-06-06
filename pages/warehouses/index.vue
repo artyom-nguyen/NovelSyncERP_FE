@@ -270,7 +270,7 @@ const formData = ref<WarehouseForm>({ ...defaultForm });
 
 const { data: warehouses, refresh: refreshWarehouses } = await useAPI<
   Warehouse[]
->("/warehouses?size=1000&sort=id,asc");
+>(API_ENDPOINTS.warehouses.listSorted);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -338,7 +338,9 @@ const handleSubmitWarehouse = async () => {
   };
 
   const { error } = await useAPI(
-    isEditMode.value ? `/warehouses/${formData.value.id}` : "/warehouses",
+    isEditMode.value
+      ? API_ENDPOINTS.warehouses.detail(formData.value.id || "")
+      : API_ENDPOINTS.warehouses.list,
     { method: isEditMode.value ? "PUT" : "POST", body: payload },
   );
 
@@ -360,7 +362,9 @@ const handleDeleteWarehouse = async (id: number) => {
   const isConfirm = await confirmDelete("Bạn có chắc chắn muốn xóa kho này?");
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/warehouses/${id}`, { method: "DELETE" });
+  const { error } = await useAPI(API_ENDPOINTS.warehouses.detail(id), {
+    method: "DELETE",
+  });
 
   if (error.value) {
     toast.fromMessage(getApiErrorMessage(error.value, "Không thể xóa kho"));

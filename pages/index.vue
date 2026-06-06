@@ -171,7 +171,7 @@ const handleLogin = async () => {
     clearToken();
 
     const { data, error } = await useAPI<{ id_token: string }>(
-      "/authenticate",
+      API_ENDPOINTS.account.authenticate,
       {
         method: "POST",
         body: {

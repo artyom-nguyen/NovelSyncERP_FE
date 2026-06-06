@@ -366,7 +366,7 @@ const defaultForm: SupplierFormPayload = {
 const formData = ref<SupplierFormPayload>({ ...defaultForm });
 
 const { data: suppliers, refresh: refreshSuppliers } =
-  await useAPI<Supplier[]>("/suppliers");
+  await useAPI<Supplier[]>(API_ENDPOINTS.suppliers.list);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -461,8 +461,8 @@ const handleSubmitSupplier = async () => {
   }
 
   const apiUrl = isEditMode.value
-    ? `/suppliers/${formData.value.id}`
-    : "/suppliers";
+    ? API_ENDPOINTS.suppliers.detail(formData.value.id || "")
+    : API_ENDPOINTS.suppliers.list;
   const apiMethod = isEditMode.value ? "PUT" : "POST";
 
   const { error: submitError } = await useAPI(apiUrl, {
@@ -496,7 +496,7 @@ const handleDeleteSupplier = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(`/suppliers/${id}`, {
+  const { error: deleteError } = await useAPI(API_ENDPOINTS.suppliers.detail(id), {
     method: "DELETE",
   });
 

@@ -1244,10 +1244,10 @@ const yearOptions = computed(() => {
 });
 
 const { data: salesOrders, refresh: refreshOrders } =
-  await useAPI<SalesOrder[]>("/sales-orders");
-const { data: account } = await useAPI<any>("/account");
-const { data: products } = await useAPI<any[]>("/products");
-const { data: warehouses } = await useAPI<any[]>("/warehouses");
+  await useAPI<SalesOrder[]>(API_ENDPOINTS.salesOrders.list);
+const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
+const { data: products } = await useAPI<any[]>(API_ENDPOINTS.products.list);
+const { data: warehouses } = await useAPI<any[]>(API_ENDPOINTS.warehouses.list);
 const { createRoleChecker, getActionRoles, getUserRoles } =
   useRoutePermissions();
 
@@ -1587,7 +1587,7 @@ const submitOrder = async () => {
 
   try {
     const { data: createdCustomer, error: customerError } = await useAPI<any>(
-      "/customers",
+      API_ENDPOINTS.customers.list,
       {
         method: "POST",
         body: {
@@ -1629,7 +1629,7 @@ const submitOrder = async () => {
     };
 
     const { data: createdOrder, error } = await useAPI<SalesOrder>(
-      "/sales-orders",
+      API_ENDPOINTS.salesOrders.list,
       {
         method: "POST",
         body: payload,
@@ -1664,7 +1664,7 @@ const openDetailPopup = async (id: number) => {
   activeDetailTab.value = "general";
 
   const { data: soData, error: soError } = await useAPI<SalesOrder>(
-    `/sales-orders/${id}`,
+    API_ENDPOINTS.salesOrders.detail(id),
   );
   if (soError.value || !soData.value) {
     toast.fromMessage("Lỗi khi tải chi tiết đơn hàng!");
@@ -1672,7 +1672,7 @@ const openDetailPopup = async (id: number) => {
   }
 
   const { data: linesData, error: linesError } = await useAPI<any[]>(
-    "/sales-order-lines?size=1000",
+    API_ENDPOINTS.salesOrderLines.listPaged,
   );
   if (linesError.value) {
     toast.fromMessage("Không thể tải danh sách sản phẩm trong đơn.");
@@ -1713,9 +1713,12 @@ const handleApproveOrder = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error: completeError } = await useAPI(`/sales-orders/${id}/approve`, {
-    method: "PUT",
-  });
+  const { error: completeError } = await useAPI(
+    API_ENDPOINTS.salesOrders.approve(id),
+    {
+      method: "PUT",
+    },
+  );
 
   if (completeError.value) {
     const backEndMsg =
@@ -1741,7 +1744,7 @@ const handleStartDelivery = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/sales-orders/${id}/start-delivery`, {
+  const { error } = await useAPI(API_ENDPOINTS.salesOrders.startDelivery(id), {
     method: "PUT",
   });
 
@@ -1769,7 +1772,7 @@ const handleConfirmDelivery = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/sales-orders/${id}/confirm-delivery`, {
+  const { error } = await useAPI(API_ENDPOINTS.salesOrders.confirmDelivery(id), {
     method: "PUT",
   });
 
@@ -1790,7 +1793,7 @@ const handleConfirmDelivery = async (id: number) => {
 
 const handleCreateVnPayUrl = async (id: number) => {
   const { data, error } = await useAPI<{ url: string }>(
-    `/payments/create-vnpay-url?orderId=${id}`,
+    API_ENDPOINTS.payments.createVnPayUrl(id),
     { method: "POST" },
   );
 
@@ -1816,7 +1819,7 @@ const handleDeleteOrder = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(`/sales-orders/${id}/cancel`, {
+  const { error: deleteError } = await useAPI(API_ENDPOINTS.salesOrders.cancel(id), {
     method: "PUT",
   });
 

@@ -135,7 +135,7 @@ const handleResetPassword = async () => {
   isSubmitting.value = true;
 
   try {
-    const { error } = await useAPI("/account/reset-password/finish", {
+    const { error } = await useAPI(API_ENDPOINTS.account.resetPasswordFinish, {
       method: "POST",
       body: {
         key: resetKey.value,

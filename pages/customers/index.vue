@@ -319,7 +319,7 @@ const formData = ref<CustomerForm>({ ...defaultForm });
 
 const { data: customers, refresh: refreshCustomers } = await useAPI<
   Customer[]
->("/customers?size=1000&sort=id,asc");
+>(API_ENDPOINTS.customers.listSorted);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -408,7 +408,9 @@ const handleSubmitCustomer = async () => {
   };
 
   const { error } = await useAPI(
-    isEditMode.value ? `/customers/${formData.value.id}` : "/customers",
+    isEditMode.value
+      ? API_ENDPOINTS.customers.detail(formData.value.id || "")
+      : API_ENDPOINTS.customers.list,
     { method: isEditMode.value ? "PUT" : "POST", body: payload },
   );
 
@@ -434,7 +436,9 @@ const handleDeleteCustomer = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/customers/${id}`, { method: "DELETE" });
+  const { error } = await useAPI(API_ENDPOINTS.customers.detail(id), {
+    method: "DELETE",
+  });
 
   if (error.value) {
     toast.fromMessage(getApiErrorMessage(error.value, "Không thể xóa khách hàng"));

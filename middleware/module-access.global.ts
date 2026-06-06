@@ -43,7 +43,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const config = useRuntimeConfig();
 
     try {
-      accountState.value = await $fetch<Account>("/account", {
+      accountState.value = await $fetch<Account>(API_ENDPOINTS.account.me, {
         baseURL: config.public.apiBase,
         headers: {
           Authorization: `Bearer ${token.value}`,

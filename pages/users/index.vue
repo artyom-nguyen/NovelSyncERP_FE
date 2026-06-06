@@ -450,7 +450,9 @@ const filters = ref<Record<string, string | number>>({
 
 const { fallbackAuthorityNames, formatRole } = useRoutePermissions();
 
-const { data: authorities } = await useAPI<string[]>("/authorities");
+const { data: authorities } = await useAPI<string[]>(
+  API_ENDPOINTS.authorities.list,
+);
 
 const roleOptions = computed(() => {
   const names = authorities.value?.length
@@ -496,7 +498,7 @@ const defaultForm: UserFormPayload = {
 const formData = ref<UserFormPayload>({ ...defaultForm });
 
 const { data: users, refresh: refreshUsers } =
-  await useAPI<User[]>("/admin/users");
+  await useAPI<User[]>(API_ENDPOINTS.adminUsers.list);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -615,7 +617,7 @@ const handleSubmitUser = async () => {
     payload.id = formData.value.id;
   }
 
-  const apiUrl = "/admin/users";
+  const apiUrl = API_ENDPOINTS.adminUsers.list;
   const apiMethod = isEditMode.value ? "PUT" : "POST";
 
   const { error: submitError } = await useAPI(apiUrl, {
@@ -671,7 +673,7 @@ const handleDeleteUser = async (login: string) => {
   );
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(`/admin/users/${login}`, {
+  const { error: deleteError } = await useAPI(API_ENDPOINTS.adminUsers.detail(login), {
     method: "DELETE",
   });
 

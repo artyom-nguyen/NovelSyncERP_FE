@@ -530,12 +530,12 @@ const formData = ref<TransferForm>(defaultForm());
 
 const { data: transferOrders, refresh: refreshTransferOrders } = await useAPI<
   TransferOrder[]
->("/transfer-orders?size=1000&eagerload=true&sort=id,desc");
+>(API_ENDPOINTS.transferOrders.listEager);
 const { data: warehousesData } = await useAPI<SimpleRef[]>(
-  "/warehouses?size=1000&sort=id,asc",
+  API_ENDPOINTS.warehouses.listSorted,
 );
 const { data: productsData } = await useAPI<SimpleRef[]>(
-  "/products?size=1000&sort=id,asc",
+  API_ENDPOINTS.products.listSorted,
 );
 
 const warehouses = computed(() => warehousesData.value || []);
@@ -641,7 +641,7 @@ const handleSubmitTransferOrder = async () => {
     })),
   };
 
-  const { error } = await useAPI("/transfer-orders", {
+  const { error } = await useAPI(API_ENDPOINTS.transferOrders.list, {
     method: "POST",
     body: payload,
   });
@@ -661,7 +661,7 @@ const handleSubmitTransferOrder = async () => {
 };
 
 const handleWorkflow = async (id: number, action: string) => {
-  const { error } = await useAPI(`/transfer-orders/${id}/${action}`, {
+  const { error } = await useAPI(API_ENDPOINTS.transferOrders.workflow(id, action), {
     method: "PUT",
   });
 
@@ -683,7 +683,7 @@ const handleDeleteTransferOrder = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/transfer-orders/${id}`, {
+  const { error } = await useAPI(API_ENDPOINTS.transferOrders.detail(id), {
     method: "DELETE",
   });
 

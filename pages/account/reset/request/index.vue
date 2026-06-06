@@ -109,7 +109,7 @@ const requestPasswordReset = async () => {
   isSubmitting.value = true;
 
   try {
-    const { error } = await useAPI("/account/reset-password/init", {
+    const { error } = await useAPI(API_ENDPOINTS.account.resetPasswordInit, {
       method: "POST",
       body: email.value,
       headers: {

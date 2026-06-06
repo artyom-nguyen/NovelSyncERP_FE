@@ -301,7 +301,7 @@ const defaultForm: CategoryFormPayload = {
 const formData = ref<CategoryFormPayload>({ ...defaultForm });
 
 const { data: categories, refresh: refreshCategories } =
-  await useAPI<Category[]>("/categories?size=1000&sort=id,asc");
+  await useAPI<Category[]>(API_ENDPOINTS.categories.listSorted);
 const normalizeText = (value: unknown) =>
   String(value || "")
     .trim()
@@ -378,8 +378,8 @@ const handleSubmitCategory = async () => {
   }
 
   const apiUrl = isEditMode.value
-    ? `/categories/${formData.value.id}`
-    : "/categories";
+    ? API_ENDPOINTS.categories.detail(formData.value.id || "")
+    : API_ENDPOINTS.categories.list;
   const apiMethod = isEditMode.value ? "PUT" : "POST";
 
   const { error: submitError } = await useAPI(apiUrl, {
@@ -413,7 +413,7 @@ const handleDeleteCategory = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(`/categories/${id}`, {
+  const { error: deleteError } = await useAPI(API_ENDPOINTS.categories.detail(id), {
     method: "DELETE",
   });
 

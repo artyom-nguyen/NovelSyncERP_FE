@@ -113,7 +113,7 @@ export const useProfileSettings = ({
 
     isSavingProfile.value = true;
     try {
-      const { error } = await useAPI("/account", {
+      const { error } = await useAPI(API_ENDPOINTS.account.me, {
         method: "POST",
         body: {
           ...account.value,
@@ -190,7 +190,7 @@ export const useProfileSettings = ({
 
     isChangingPwd.value = true;
     try {
-      const { error } = await useAPI("/account/change-password", {
+      const { error } = await useAPI(API_ENDPOINTS.account.changePassword, {
         method: "POST",
         body: {
           currentPassword: pwdForm.value.currentPassword,

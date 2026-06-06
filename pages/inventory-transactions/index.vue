@@ -302,7 +302,9 @@ const {
   data: inventoryTransactions,
   pending: pendingTransactions,
   refresh: refreshTransactions,
-} = await useAPI<InventoryTransaction[]>("/inventory-transactions");
+} = await useAPI<InventoryTransaction[]>(
+  API_ENDPOINTS.inventoryTransactions.list,
+);
 
 const transactions = computed(() => inventoryTransactions.value || []);
 

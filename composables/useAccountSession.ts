@@ -41,7 +41,7 @@ export const useAccountSession = () => {
       return null;
     }
 
-    const { data } = await useAPI<Account>("/account");
+    const { data } = await useAPI<Account>(API_ENDPOINTS.account.me);
     account.value = (data.value as Account | null | undefined) || null;
     return account.value;
   };
@@ -49,7 +49,7 @@ export const useAccountSession = () => {
   const refreshAccount = async () => {
     if (!authToken.value) return null;
 
-    const freshAccount = await $fetch<Account>("/account", {
+    const freshAccount = await $fetch<Account>(API_ENDPOINTS.account.me, {
       baseURL: config.public.apiBase,
       headers: {
         Authorization: `Bearer ${authToken.value}`,

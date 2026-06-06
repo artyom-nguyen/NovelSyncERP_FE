@@ -246,7 +246,7 @@ const formData = ref<DepartmentForm>({ ...defaultForm });
 
 const { data: departments, refresh: refreshDepartments } = await useAPI<
   Department[]
->("/departments?size=1000&sort=id,asc");
+>(API_ENDPOINTS.departments.listSorted);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -307,7 +307,9 @@ const handleSubmitDepartment = async () => {
   };
 
   const { error } = await useAPI(
-    isEditMode.value ? `/departments/${formData.value.id}` : "/departments",
+    isEditMode.value
+      ? API_ENDPOINTS.departments.detail(formData.value.id || "")
+      : API_ENDPOINTS.departments.list,
     { method: isEditMode.value ? "PUT" : "POST", body: payload },
   );
 
@@ -333,7 +335,9 @@ const handleDeleteDepartment = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error } = await useAPI(`/departments/${id}`, { method: "DELETE" });
+  const { error } = await useAPI(API_ENDPOINTS.departments.detail(id), {
+    method: "DELETE",
+  });
 
   if (error.value) {
     toast.fromMessage(getApiErrorMessage(error.value, "Không thể xóa phòng ban"));
