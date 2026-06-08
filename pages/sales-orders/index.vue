@@ -30,6 +30,17 @@
                 <a
                   href="javascript:;"
                   class="icon-item-utility wth-tooltip"
+                  v-if="canSimulateCampaign"
+                  @click="openCampaignPopup"
+                >
+                  <img src="/img-fix/icon/icon-info-duetone.svg" alt="" />
+                  <span class="topbar-tooltip">AI mô phỏng chiến dịch</span>
+                </a>
+              </div>
+              <div class="item-utility-topbar">
+                <a
+                  href="javascript:;"
+                  class="icon-item-utility wth-tooltip"
                   @click="openExportPopup"
                 >
                   <img src="/img-fix/icon/icon-download-black.svg" alt="" />
@@ -128,7 +139,7 @@
                       </div>
                       <div class="imt-content-table">
                         <p class="txt-content-table">
-                          {{ formatDate(so.createdAt) }}
+                          {{ formatDate(so.createdDate) }}
                         </p>
                       </div>
                       <div class="imt-content-table">
@@ -399,6 +410,142 @@
 
     <Teleport to="body">
       <div
+        v-if="isCampaignPopupOpen"
+        class="popup-export-file ct-popup-width-540 new-popup-common open-popup overlay-fixed"
+      >
+        <div class="content-export-file">
+          <div class="main-export-file">
+            <div class="title-export-file align-items-center">
+              <div class="left">
+                <p class="text-size-14-medium">AI mô phỏng chiến dịch bán</p>
+              </div>
+              <div class="right">
+                <div class="icon-close-small" @click="closeCampaignPopup">
+                  <img src="/img-fix/icon/icon-close.svg" alt="" />
+                </div>
+              </div>
+            </div>
+            <div class="main-popup-content">
+              <div class="form-popup-grid export-report-grid">
+                <div class="imt-popup-form">
+                  <p class="txt-ct-input">
+                    Sản phẩm <span class="important-text">*</span>
+                  </p>
+                  <div class="ct-form-select">
+                    <select v-model="campaignForm.productId">
+                      <option value="" disabled>Chọn sản phẩm</option>
+                      <option
+                        v-for="product in filteredProducts"
+                        :key="product.id"
+                        :value="product.id"
+                      >
+                        {{ product.sku }} - {{ product.name }}
+                      </option>
+                    </select>
+                    <span class="icon-select">
+                      <img src="/img-fix/icon/icon-arrow-down-new.svg" alt="" />
+                    </span>
+                  </div>
+                </div>
+                <div class="imt-popup-form">
+                  <p class="txt-ct-input">
+                    Kho <span class="important-text">*</span>
+                  </p>
+                  <div class="ct-form-select">
+                    <select v-model="campaignForm.warehouseId">
+                      <option value="" disabled>Chọn kho</option>
+                      <option
+                        v-for="warehouse in warehouses || []"
+                        :key="warehouse.id"
+                        :value="warehouse.id"
+                      >
+                        {{ warehouse.name }}
+                      </option>
+                    </select>
+                    <span class="icon-select">
+                      <img src="/img-fix/icon/icon-arrow-down-new.svg" alt="" />
+                    </span>
+                  </div>
+                </div>
+                <div class="imt-popup-form">
+                  <p class="txt-ct-input">Giảm giá %</p>
+                  <div class="ct-form-input">
+                    <input
+                      v-model.number="campaignForm.discountPercent"
+                      min="0"
+                      max="100"
+                      type="number"
+                    />
+                  </div>
+                </div>
+                <div class="imt-popup-form">
+                  <p class="txt-ct-input">Ngân sách marketing</p>
+                  <div class="ct-form-input">
+                    <input
+                      v-model.number="campaignForm.marketingSpend"
+                      min="0"
+                      type="number"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <label class="campaign-toggle">
+                <input v-model="campaignForm.isHoliday" type="checkbox" />
+                <span>Tháng có yếu tố mùa vụ / ngày lễ</span>
+              </label>
+
+              <div v-if="campaignResult" class="campaign-result-grid">
+                <div class="campaign-result-card">
+                  <p class="title">Dự báo bán</p>
+                  <p class="number">
+                    {{ formatNumber(campaignResult.predicted_sales) }}
+                  </p>
+                </div>
+                <div class="campaign-result-card">
+                  <p class="title">Doanh thu dự kiến</p>
+                  <p class="number">
+                    {{ formatCurrency(campaignResult.expected_revenue) }}
+                  </p>
+                </div>
+                <div class="campaign-result-card">
+                  <p class="title">Lợi nhuận dự kiến</p>
+                  <p class="number">
+                    {{ formatCurrency(campaignResult.expected_profit) }}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="button-popup-content">
+              <div class="btn-create-group">
+                <a
+                  href="javascript:;"
+                  class="btn-frame-color imt-border"
+                  @click="closeCampaignPopup"
+                >
+                  <p class="text-size-13-rgl">Đóng</p>
+                </a>
+              </div>
+              <div class="btn-create-group">
+                <a
+                  href="javascript:;"
+                  class="btn-frame-color primary"
+                  @click="simulateCampaign"
+                >
+                  <p class="text-size-13-rgl">
+                    {{ isSimulatingCampaign ? "Đang mô phỏng..." : "Mô phỏng" }}
+                  </p>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-popup-page" @click="closeCampaignPopup"></div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div
         v-if="isCreatePopupOpen"
         class="popup-export-file ct-popup-width-1200 new-popup-common open-popup overlay-fixed"
       >
@@ -447,19 +594,6 @@
                     </div>
                     <div class="imt-popup-form">
                       <p class="txt-ct-input">
-                        Ngày <span class="important-text">*</span>
-                      </p>
-                      <div class="ct-form-input">
-                        <input
-                          type="date"
-                          class="text-size-14-light"
-                          v-model="formData.date"
-                        />
-                      </div>
-                    </div>
-
-                    <div class="imt-popup-form">
-                      <p class="txt-ct-input">
                         Khách mua <span class="important-text">*</span>
                       </p>
                       <div class="ct-form-input">
@@ -468,20 +602,6 @@
                           class="text-size-14-light"
                           v-model="formData.partnerName"
                           placeholder="Nhập tên khách mua / đối tác"
-                        />
-                      </div>
-                    </div>
-
-                    <div class="imt-popup-form">
-                      <p class="txt-ct-input">
-                        Địa chỉ đối tác <span class="important-text">*</span>
-                      </p>
-                      <div class="ct-form-input">
-                        <input
-                          type="text"
-                          class="text-size-14-light"
-                          v-model="formData.partnerAddress"
-                          placeholder="Nhập địa chỉ đối tác"
                         />
                       </div>
                     </div>
@@ -504,15 +624,6 @@
                       </div>
                     </div>
 
-                    <div class="imt-popup-form w-100">
-                      <p class="txt-ct-input">Ghi chú</p>
-                      <div class="ct-form-textarea">
-                        <textarea
-                          v-model="formData.note"
-                          placeholder="Ghi chú thêm về đơn hàng..."
-                        ></textarea>
-                      </div>
-                    </div>
                   </div>
 
                   <div
@@ -561,7 +672,10 @@
                               <p class="txt-title-table">SL</p>
                             </div>
                             <div class="imt-title-table">
-                              <p class="txt-title-table">Đơn giá</p>
+                              <p class="txt-title-table">Giá bán</p>
+                            </div>
+                            <div class="imt-title-table">
+                              <p class="txt-title-table">Giảm giá %</p>
                             </div>
                             <div class="imt-title-table">
                               <p class="txt-title-table">Thành tiền</p>
@@ -624,6 +738,17 @@
                                     type="number"
                                     v-model="item.price"
                                     min="0"
+                                    disabled
+                                  />
+                                </div>
+                              </div>
+                              <div class="imt-content-table">
+                                <div class="ct-form-input">
+                                  <input
+                                    type="number"
+                                    v-model="item.discountPercent"
+                                    min="0"
+                                    max="100"
                                   />
                                 </div>
                               </div>
@@ -665,7 +790,13 @@
                         <p class="text-size-14-medium mb-10">Tổng hợp</p>
                         <div class="row-price-flex">
                           <p class="left">Tạm tính</p>
-                          <p class="right">{{ formatCurrency(finalTotal) }}</p>
+                          <p class="right">{{ formatCurrency(grossTotal) }}</p>
+                        </div>
+                        <div class="row-price-flex">
+                          <p class="left">Giảm giá</p>
+                          <p class="right text-blue">
+                            -{{ formatCurrency(totalDiscount) }}
+                          </p>
                         </div>
                         <div class="row-price-flex final-price">
                           <p class="left">Tổng cộng:</p>
@@ -739,9 +870,6 @@
                             </p>
                           </div>
                         </div>
-                        <p class="text-size-13-light">
-                          {{ formatFullDate(selectedOrder.createdAt) }}
-                        </p>
                       </div>
                     </div>
                     <div class="right ct-product-title">
@@ -849,24 +977,6 @@
                                 {{ selectedOrder.orderCode }}
                               </p>
                             </div>
-                            <div class="imt-info-hs">
-                              <p class="text-size-14-light opacity-6 mb-4px">
-                                Ngày đặt hàng
-                              </p>
-                              <p class="text-size-14-rgl">
-                                {{ formatDate(selectedOrder.createdAt) }}
-                              </p>
-                            </div>
-                            <div class="imt-info-hs w-100">
-                              <p class="text-size-14-light opacity-6 mb-4px">
-                                Địa chỉ đối tác
-                              </p>
-                              <p class="text-size-14-rgl">
-                                {{
-                                  getPartnerInfo(selectedOrder).address || "---"
-                                }}
-                              </p>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -884,12 +994,6 @@
                             {{ getPartnerInfo(selectedOrder).name || "---" }}
                           </p>
                           <div class="content">
-                            <p>
-                              Địa chỉ:
-                              <span>{{
-                                getPartnerInfo(selectedOrder).address || "---"
-                              }}</span>
-                            </p>
                             <p>
                               Số điện thoại:
                               <span>{{
@@ -926,6 +1030,9 @@
                                 </div>
                                 <div class="imt-title-table">
                                   <p class="txt-title-table">Đơn giá bán</p>
+                                </div>
+                                <div class="imt-title-table">
+                                  <p class="txt-title-table">Giảm giá %</p>
                                 </div>
                                 <div class="imt-title-table">
                                   <p class="txt-title-table">Thành tiền</p>
@@ -966,15 +1073,15 @@
                                     </p>
                                   </div>
                                   <div class="imt-content-table">
+                                    <p class="txt-content-table">
+                                      {{ item.discountPercent || 0 }}%
+                                    </p>
+                                  </div>
+                                  <div class="imt-content-table">
                                     <p
                                       class="txt-m-content-table font-weight-bold"
                                     >
-                                      {{
-                                        formatCurrency(
-                                          (item.quantity || 0) *
-                                            (item.price || 0),
-                                        )
-                                      }}
+                                      {{ formatCurrency(itemTotal(item)) }}
                                     </p>
                                   </div>
                                 </div>
@@ -1107,7 +1214,6 @@ interface EmployeeLight {
 
 interface PartnerInfo {
   name: string;
-  address: string;
   phone: string;
 }
 
@@ -1117,7 +1223,7 @@ interface SalesOrder {
   code?: string;
   status: string;
   totalAmount: number;
-  createdAt?: string;
+  createdDate?: string | null;
   employee?: EmployeeLight;
   customer?: {
     id: number;
@@ -1129,7 +1235,6 @@ interface SalesOrder {
     name: string;
   } | null;
   partnerName?: string;
-  partnerAddress?: string;
   partnerPhone?: string;
   items?: SalesOrderItem[];
   salesOrderLines?: any[];
@@ -1141,14 +1246,32 @@ interface SalesOrderItem {
   productCode?: string;
   quantity: number;
   price: number;
+  discountPercent: number;
+}
+
+interface Product {
+  id: number;
+  sku: string;
+  name: string;
+  sellingPrice: number;
+  purchasePrice?: number;
+}
+
+interface CampaignSimulationResult {
+  predicted_sales?: number;
+  expected_revenue?: number | string | null;
+  expected_profit?: number | string | null;
+  error?: string;
 }
 
 const openActionId = ref<number | null>(null);
 const isCreatePopupOpen = ref(false);
 const isDetailPopupOpen = ref(false);
 const isExportPopupOpen = ref(false);
+const isCampaignPopupOpen = ref(false);
 const isSubmitting = ref(false);
 const isExporting = ref(false);
+const isSimulatingCampaign = ref(false);
 const selectedOrder = ref<SalesOrder | null>(null);
 const activeDetailTab = ref("general");
 const searchQuery = ref("");
@@ -1156,8 +1279,6 @@ const isFilterPopupOpen = ref(false);
 const filterAnchorRect = ref<DOMRectReadOnly | null>(null);
 const filters = ref<Record<string, string | number>>({
   status: "",
-  createdFrom: "",
-  createdTo: "",
 });
 const filterFields = [
   {
@@ -1166,18 +1287,11 @@ const filterFields = [
     type: "select" as const,
     options: [
       { label: "Đơn nháp", value: "DRAFT" },
+      { label: "Đã duyệt", value: "APPROVED" },
+      { label: "Đang giao", value: "PROCESSING" },
       { label: "Đã xuất kho", value: "COMPLETED" },
+      { label: "Đã hủy", value: "CANCELLED" },
     ],
-  },
-  {
-    key: "createdFrom",
-    label: "Từ ngày",
-    type: "date" as const,
-  },
-  {
-    key: "createdTo",
-    label: "Đến ngày",
-    type: "date" as const,
   },
 ];
 
@@ -1237,6 +1351,14 @@ const exportForm = ref({
   month: currentDate.getMonth() + 1,
   year: currentDate.getFullYear(),
 });
+const campaignForm = ref({
+  productId: "" as number | string,
+  warehouseId: "" as number | string,
+  discountPercent: 10,
+  marketingSpend: 0,
+  isHoliday: false,
+});
+const campaignResult = ref<CampaignSimulationResult | null>(null);
 
 const yearOptions = computed(() => {
   const currentYear = currentDate.getFullYear();
@@ -1246,7 +1368,9 @@ const yearOptions = computed(() => {
 const { data: salesOrders, refresh: refreshOrders } =
   await useAPI<SalesOrder[]>(API_ENDPOINTS.salesOrders.list);
 const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
-const { data: products } = await useAPI<any[]>(API_ENDPOINTS.products.list);
+const { data: products } = await useAPI<Product[]>(
+  API_ENDPOINTS.products.listSorted,
+);
 const { data: warehouses } = await useAPI<any[]>(API_ENDPOINTS.warehouses.list);
 const { createRoleChecker, getActionRoles, getUserRoles } =
   useRoutePermissions();
@@ -1269,37 +1393,76 @@ const canCreateSalesPayment = computed(() =>
 const canCancelSalesOrder = computed(() =>
   hasAnyRole(getActionRoles("salesOrders.cancel")),
 );
+const canSimulateCampaign = computed(() => hasAnyRole(["ROLE_ADMIN"]));
 const canCancelSalesOrderStatus = (status: string) =>
   canCancelSalesOrder.value &&
   ["DRAFT", "APPROVED", "PROCESSING"].includes(status);
+
+const openCampaignPopup = () => {
+  campaignResult.value = null;
+  if (!campaignForm.value.productId && filteredProducts.value[0]?.id) {
+    campaignForm.value.productId = filteredProducts.value[0].id;
+  }
+  if (!campaignForm.value.warehouseId && warehouses.value?.[0]?.id) {
+    campaignForm.value.warehouseId = warehouses.value[0].id;
+  }
+  isCampaignPopupOpen.value = true;
+};
+
+const closeCampaignPopup = () => {
+  isCampaignPopupOpen.value = false;
+};
+
+const simulateCampaign = async () => {
+  if (!canSimulateCampaign.value || isSimulatingCampaign.value) return;
+  if (!campaignForm.value.productId || !campaignForm.value.warehouseId) {
+    toast.fromMessage("Vui lòng chọn sản phẩm và kho.");
+    return;
+  }
+
+  const discount = Number(campaignForm.value.discountPercent) || 0;
+  if (discount < 0 || discount > 100) {
+    toast.fromMessage("Giảm giá phải nằm trong khoảng 0 đến 100%.");
+    return;
+  }
+
+  const params = new URLSearchParams({
+    productId: String(campaignForm.value.productId),
+    warehouseId: String(campaignForm.value.warehouseId),
+    discountPercent: String(discount),
+    marketingSpend: String(Number(campaignForm.value.marketingSpend) || 0),
+    isHoliday: campaignForm.value.isHoliday ? "1" : "0",
+  });
+
+  isSimulatingCampaign.value = true;
+  campaignResult.value = null;
+  try {
+    const { data, error } = await useAPI<CampaignSimulationResult>(
+      API_ENDPOINTS.ai.simulate(params.toString()),
+    );
+    if (error.value) {
+      toast.fromMessage(getApiErrorMessage(error.value, "Không thể mô phỏng chiến dịch"));
+      return;
+    }
+    if (data.value?.error) {
+      toast.fromMessage(data.value.error);
+    }
+    campaignResult.value = data.value;
+  } finally {
+    isSimulatingCampaign.value = false;
+  }
+};
 
 const normalizeText = (value: unknown) =>
   String(value || "")
     .trim()
     .toLowerCase();
 
-const toDateValue = (value: string | number) =>
-  value ? new Date(String(value)).getTime() : null;
-
 const openFilterPopup = (event?: MouseEvent) => {
   if (event?.currentTarget instanceof HTMLElement) {
     filterAnchorRect.value = event.currentTarget.getBoundingClientRect();
   }
   isFilterPopupOpen.value = true;
-};
-
-const isInDateRange = (dateStr: string | null | undefined) => {
-  if (!filters.value.createdFrom && !filters.value.createdTo) return true;
-  if (!dateStr) return false;
-
-  const time = new Date(dateStr).getTime();
-  const fromTime = toDateValue(filters.value.createdFrom);
-  const toTime = toDateValue(filters.value.createdTo);
-  const endOfToDate = toTime ? toTime + 24 * 60 * 60 * 1000 - 1 : null;
-
-  return (
-    (!fromTime || time >= fromTime) && (!endOfToDate || time <= endOfToDate)
-  );
 };
 
 const filteredSalesOrders = computed(() => {
@@ -1316,7 +1479,6 @@ const filteredSalesOrders = computed(() => {
         order.status,
         partnerInfo.name,
         partnerInfo.phone,
-        partnerInfo.address,
       ]
         .map(normalizeText)
         .join(" ")
@@ -1324,7 +1486,7 @@ const filteredSalesOrders = computed(() => {
     const matchesStatus =
       !filters.value.status || order.status === filters.value.status;
 
-    return matchesSearch && matchesStatus && isInDateRange(order.createdAt);
+    return matchesSearch && matchesStatus;
   });
 });
 
@@ -1332,30 +1494,35 @@ const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
 };
 
+const getExistingSalesOrderCodes = () =>
+  (salesOrders.value || []).map((order) => order.orderCode);
+
 const generateCode = () =>
-  `SO_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}_${Math.floor(Math.random() * 1000)}`;
+  generateModuleCode("salesOrder", getExistingSalesOrderCodes());
 
 const defaultForm = () => ({
   code: generateCode(),
-  date: new Date().toISOString().slice(0, 10),
   partnerName: "",
-  partnerAddress: "",
   partnerPhone: "",
-  note: "",
-  items: [{ productId: "", quantity: 1, price: 0 } as SalesOrderItem],
+  items: [
+    {
+      productId: "",
+      quantity: 1,
+      price: 0,
+      discountPercent: 0,
+    } as SalesOrderItem,
+  ],
 });
 
 const formData = ref(defaultForm());
 const SALES_ORDER_PARTNER_STORAGE_KEY = "novelsync:sales-order-partners";
 const emptyPartnerInfo = (): PartnerInfo => ({
   name: "",
-  address: "",
   phone: "",
 });
 
 const normalizePartnerInfo = (partner: PartnerInfo): PartnerInfo => ({
   name: partner.name.trim(),
-  address: partner.address.trim(),
   phone: partner.phone.trim(),
 });
 
@@ -1403,15 +1570,13 @@ const getPartnerInfo = (order: SalesOrder | null): PartnerInfo => {
   if (order.customer?.name || order.customer?.phone) {
     return normalizePartnerInfo({
       name: order.customer?.name || "",
-      address: "",
       phone: order.customer?.phone || "",
     });
   }
 
-  if (order.partnerName || order.partnerAddress || order.partnerPhone) {
+  if (order.partnerName || order.partnerPhone) {
     return normalizePartnerInfo({
       name: order.partnerName || "",
-      address: order.partnerAddress || "",
       phone: order.partnerPhone || "",
     });
   }
@@ -1521,7 +1686,12 @@ const getProductCode = (productId: number | "") => {
 };
 
 const addItem = () => {
-  formData.value.items.push({ productId: "", quantity: 1, price: 0 });
+  formData.value.items.push({
+    productId: "",
+    quantity: 1,
+    price: 0,
+    discountPercent: 0,
+  });
 };
 
 const removeItem = (index: number) => {
@@ -1535,12 +1705,26 @@ const onProductChange = (item: SalesOrderItem) => {
     (entry) => entry.id === Number(item.productId),
   );
   if (product) {
-    item.price = product.basePrice || 0;
+    item.price = Number(product.sellingPrice) || 0;
   }
 };
 
-const itemTotal = (item: SalesOrderItem) =>
+const itemGrossTotal = (item: SalesOrderItem) =>
   (item.quantity || 0) * (item.price || 0);
+
+const itemDiscountAmount = (item: SalesOrderItem) =>
+  (itemGrossTotal(item) * (Number(item.discountPercent) || 0)) / 100;
+
+const itemTotal = (item: SalesOrderItem) =>
+  itemGrossTotal(item) - itemDiscountAmount(item);
+
+const grossTotal = computed(() =>
+  formData.value.items.reduce((sum, item) => sum + itemGrossTotal(item), 0),
+);
+
+const totalDiscount = computed(() =>
+  formData.value.items.reduce((sum, item) => sum + itemDiscountAmount(item), 0),
+);
 
 const finalTotal = computed(() => {
   return formData.value.items.reduce((sum, item) => sum + itemTotal(item), 0);
@@ -1554,19 +1738,22 @@ const submitOrder = async () => {
   const invalidPriceItem = validItems.find((item) =>
     Boolean(validateNonNegativeNumber(item.price || 0, "Đơn giá")),
   );
+  const invalidDiscountItem = validItems.find((item) => {
+    const discount = Number(item.discountPercent) || 0;
+    return discount < 0 || discount > 100;
+  });
   const validationError = firstValidationError([
     validateRequired(formData.value.code, "Mã đơn bán"),
     validateMaxLength(formData.value.code, 50, "Mã đơn bán"),
     validateRequired(formData.value.partnerName, "Tên đối tác"),
     validateMaxLength(formData.value.partnerName, 255, "Tên đối tác"),
-    validateRequired(formData.value.partnerAddress, "Địa chỉ đối tác"),
-    validateMaxLength(formData.value.partnerAddress, 500, "Địa chỉ đối tác"),
     validateRequired(formData.value.partnerPhone, "Số điện thoại đối tác"),
     validateDigitsOnly(formData.value.partnerPhone, "Số điện thoại đối tác"),
     validateMaxLength(formData.value.partnerPhone, 30, "Số điện thoại đối tác"),
     validItems.length > 0 ? "" : "Vui lòng chọn ít nhất 1 sản phẩm hợp lệ!",
     invalidItem ? "Số lượng sản phẩm phải là số nguyên lớn hơn 0." : "",
     invalidPriceItem ? "Đơn giá không được nhỏ hơn 0." : "",
+    invalidDiscountItem ? "Giảm giá phải nằm trong khoảng 0 đến 100%." : "",
   ]);
 
   if (validationError) {
@@ -1581,7 +1768,6 @@ const submitOrder = async () => {
   isSubmitting.value = true;
   const partnerInfo = normalizePartnerInfo({
     name: formData.value.partnerName,
-    address: formData.value.partnerAddress,
     phone: formData.value.partnerPhone,
   });
 
@@ -1591,7 +1777,7 @@ const submitOrder = async () => {
       {
         method: "POST",
         body: {
-          code: `CUS-${Date.now()}`,
+          code: generateModuleCode("customer"),
           name: partnerInfo.name,
           phone: partnerInfo.phone,
           creditLimit: 0,
@@ -1622,6 +1808,7 @@ const submitOrder = async () => {
       salesOrderLines: validItems.map((item) => ({
         quantity: Number(item.quantity),
         unitPrice: Number(item.price) || 0,
+        discountPercent: Number(item.discountPercent) || 0,
         product: {
           id: Number(item.productId),
         },
@@ -1692,6 +1879,7 @@ const openDetailPopup = async (id: number) => {
       productName: line.product?.name || "---",
       quantity: line.quantity || 0,
       price: line.unitPrice || 0,
+      discountPercent: line.discountPercent || 0,
     })),
   };
 
@@ -1838,7 +2026,10 @@ const handleDeleteOrder = async (id: number) => {
   await refreshOrders();
 };
 
-const formatCurrency = (amount: number | null | undefined) => {
+const formatNumber = (value: number | null | undefined) =>
+  Number(value || 0).toLocaleString("vi-VN");
+
+const formatCurrency = (amount: number | string | null | undefined) => {
   if (amount == null)
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -1847,12 +2038,13 @@ const formatCurrency = (amount: number | null | undefined) => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
-  }).format(amount);
+  }).format(Number(amount || 0));
 };
 
 const formatDate = (dateStr: string | null | undefined) => {
   if (!dateStr) return "---";
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "---";
   return new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
     month: "2-digit",
@@ -1862,14 +2054,47 @@ const formatDate = (dateStr: string | null | undefined) => {
   }).format(date);
 };
 
-const formatFullDate = (dateStr: string | null | undefined) => {
-  if (!dateStr) return "---";
-  const date = new Date(dateStr);
-  return new Intl.DateTimeFormat("vi-VN", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
-};
 </script>
+
+<style scoped>
+.campaign-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: #475467;
+  font-size: 13px;
+}
+
+.campaign-result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.campaign-result-card {
+  border: 1px solid #edf0f5;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.campaign-result-card .title {
+  color: #667085;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.campaign-result-card .number {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .campaign-result-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

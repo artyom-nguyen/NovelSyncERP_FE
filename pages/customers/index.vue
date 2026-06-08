@@ -197,6 +197,14 @@
                         maxlength="255"
                         placeholder="Nhập mã khách hàng"
                       />
+                      <div class="ct-form-2025">
+                        <button
+                          class="button-ktra"
+                          @click.prevent="handleGenerateCode"
+                        >
+                          <span class="text">Tạo</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div class="imt-bm-form">
@@ -352,9 +360,22 @@ const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
 };
 
+const getExistingCustomerCodes = () =>
+  (customers.value || []).map((customer) => customer.code);
+
+const handleGenerateCode = () => {
+  formData.value.code = generateModuleCode(
+    "customer",
+    getExistingCustomerCodes(),
+  );
+};
+
 const openCreatePopup = () => {
   isEditMode.value = false;
-  formData.value = { ...defaultForm };
+  formData.value = {
+    ...defaultForm,
+    code: generateModuleCode("customer", getExistingCustomerCodes()),
+  };
   isPopupOpen.value = true;
 };
 

@@ -38,6 +38,19 @@
                   <span class="txt">Làm việc</span>
                 </NuxtLink>
               </div>
+              <div
+                v-if="hasAnyRole(reportRoles)"
+                class="item-menu-homepage"
+                :class="{ active: isReportRouteActive }"
+              >
+                <NuxtLink
+                  to="/reports"
+                  class="txt-menu-homepage"
+                  @click.prevent.stop="goToRoute('/reports')"
+                >
+                  <span class="txt">Báo cáo</span>
+                </NuxtLink>
+              </div>
             </div>
           </div>
           <div class="right">
@@ -953,6 +966,7 @@ const {
   getActionRoles,
   inventoryRoles,
   purchaseRoles,
+  reportRoles,
   salesRoles,
   transferRoles,
 } = useRoutePermissions();
@@ -1080,6 +1094,7 @@ const workNavGroups: WorkNavGroup[] = [
 
 const mobileNavItems: NavItem[] = [
   { label: "Tổng quan", to: "/dashboard" },
+  { label: "Báo cáo", to: "/reports", roles: reportRoles },
   { label: "Đơn bán hàng", to: "/sales-orders", roles: salesRoles },
   { label: "Khách hàng", to: "/customers", roles: salesRoles },
   { label: "Đơn nhập hàng", to: "/purchase-orders", roles: purchaseRoles },
@@ -1128,6 +1143,7 @@ const isRouteActive = (path: string) =>
   route.path === path || route.path.startsWith(`${path}/`);
 
 const isDashboardRoute = computed(() => isRouteActive("/dashboard"));
+const isReportRouteActive = computed(() => isRouteActive("/reports"));
 const isWorkPlaceholderRoute = computed(() => isRouteActive("/work"));
 const shouldUseDashboardFullscreen = computed(
   () => isDashboardRoute.value || isWorkPlaceholderRoute.value,

@@ -9,10 +9,12 @@ interface NotificationDTO {
 }
 
 const NOTIFICATION_STORAGE_KEY = "novel_notifications";
+const USER_NOTIFICATION_DESTINATION = "/user/queue/notifications";
 
 export const useNotifications = async () => {
   const config = useRuntimeConfig();
   const { syncFromStorage, token: authToken } = useAuthToken();
+  const toast = useToast();
 
   const isOpenNotificationBox = ref(false);
   const initialNotifs = ref<NotificationDTO[]>([]);
@@ -55,6 +57,8 @@ export const useNotifications = async () => {
 
   const upsertNotification = (noti: NotificationDTO) => {
     const existIdx = notifications.value.findIndex((n) => n.id === noti.id);
+    const isNewUnread = existIdx === -1 && !noti.isRead;
+
     if (existIdx !== -1) {
       notifications.value[existIdx] = {
         ...notifications.value[existIdx],
@@ -66,14 +70,13 @@ export const useNotifications = async () => {
 
     notifications.value = sortNotifications([...notifications.value]);
     saveToLocal(notifications.value);
+
+    return isNewUnread;
   };
 
-  const mergeUnreadNotifications = (incoming: NotificationDTO[]) => {
+  const mergeNotifications = (incoming: NotificationDTO[]) => {
     incoming.forEach((noti) => {
-      upsertNotification({
-        ...noti,
-        isRead: false,
-      });
+      upsertNotification(noti);
     });
   };
 
@@ -87,10 +90,7 @@ export const useNotifications = async () => {
       try {
         const parsedLocal = JSON.parse(localData) as NotificationDTO[];
         parsedLocal.forEach((notification) => {
-          map.set(notification.id, {
-            ...notification,
-            isRead: true,
-          });
+          map.set(notification.id, notification);
         });
       } catch {
         localStorage.removeItem(NOTIFICATION_STORAGE_KEY);
@@ -98,10 +98,7 @@ export const useNotifications = async () => {
     }
 
     initialNotifs.value.forEach((notification) => {
-      map.set(notification.id, {
-        ...notification,
-        isRead: false,
-      });
+      map.set(notification.id, notification);
     });
 
     notifications.value = sortNotifications(Array.from(map.values()));
@@ -128,7 +125,7 @@ export const useNotifications = async () => {
         },
       );
 
-      mergeUnreadNotifications(data || []);
+      mergeNotifications(data || []);
     } catch {
       // Notification refresh is background work; keep the current list if it fails.
     } finally {
@@ -167,36 +164,56 @@ export const useNotifications = async () => {
     const apiBase = String(config.public.apiBase || "");
     const backendUrl = new URL(apiBase || "/api", window.location.origin);
     const basePath = backendUrl.pathname.replace(/\/api\/?$/, "");
-    backendUrl.protocol = backendUrl.protocol === "https:" ? "wss:" : "ws:";
-    backendUrl.pathname = `${basePath}/websocket/stomp`.replace(/\/{2,}/g, "/");
+    backendUrl.protocol = backendUrl.protocol === "https:" ? "https:" : "http:";
+    backendUrl.pathname = `${basePath}/ws`.replace(/\/{2,}/g, "/");
     backendUrl.search = "";
     backendUrl.searchParams.set("access_token", authToken.value || "");
     return backendUrl.toString();
   };
 
-  const connectWebSocket = () => {
+  const showRealtimeToast = (noti: NotificationDTO) => {
+    const message = [noti.title, noti.message].filter(Boolean).join(" - ");
+    toast.info(message || "Bạn có thông báo mới", "Thông báo mới");
+  };
+
+  const connectWebSocket = async () => {
     if (!process.client) return;
     syncFromStorage();
-    if (!authToken.value) return;
+    if (!authToken.value || stompClient?.active) return;
+
+    const { default: SockJS } = await import("sockjs-client");
 
     stompClient = new Client({
-      brokerURL: getWebSocketUrl(),
+      webSocketFactory: () =>
+        new SockJS(getWebSocketUrl()) as unknown as WebSocket,
       connectHeaders: {
         Authorization: `Bearer ${authToken.value}`,
       },
       debug: import.meta.dev ? (message) => console.debug(message) : () => {},
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
       reconnectDelay: 5000,
       onConnect: () => {
         const handleIncoming = (message: IMessage) => {
-          const noti = JSON.parse(message.body) as NotificationDTO;
-          upsertNotification({
-            ...noti,
-            isRead: false,
-          });
+          try {
+            const noti = JSON.parse(message.body) as NotificationDTO;
+            const isNewUnread = upsertNotification({
+              ...noti,
+              isRead: false,
+            });
+
+            if (isNewUnread) {
+              showRealtimeToast(noti);
+            }
+          } catch {
+            if (import.meta.dev) {
+              console.error("Không thể đọc dữ liệu thông báo real-time.");
+            }
+          }
         };
 
-        stompClient?.subscribe("/topic/notification", handleIncoming);
-        stompClient?.subscribe("/user/queue/notification", handleIncoming);
+        stompClient?.subscribe(USER_NOTIFICATION_DESTINATION, handleIncoming);
+        refreshNotifications();
       },
       onStompError: (frame) => {
         if (import.meta.dev) {

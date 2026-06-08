@@ -173,6 +173,14 @@
                         maxlength="255"
                         placeholder="Nhập mã phòng ban"
                       />
+                      <div class="ct-form-2025">
+                        <button
+                          class="button-ktra"
+                          @click.prevent="handleGenerateCode"
+                        >
+                          <span class="text">Tạo</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div class="imt-bm-form">
@@ -266,9 +274,22 @@ const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
 };
 
+const getExistingDepartmentCodes = () =>
+  (departments.value || []).map((department) => department.code);
+
+const handleGenerateCode = () => {
+  formData.value.code = generateModuleCode(
+    "department",
+    getExistingDepartmentCodes(),
+  );
+};
+
 const openCreatePopup = () => {
   isEditMode.value = false;
-  formData.value = { ...defaultForm };
+  formData.value = {
+    ...defaultForm,
+    code: generateModuleCode("department", getExistingDepartmentCodes()),
+  };
   isPopupOpen.value = true;
 };
 

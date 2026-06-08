@@ -16,16 +16,6 @@
                 </a>
               </div>
               <div class="item-utility-topbar">
-                <a
-                  href="javascript:;"
-                  class="icon-item-utility wth-tooltip"
-                  @click="openFilterPopup"
-                >
-                  <img src="/img-fix/icon/icon-topbar-filter.svg" alt="" />
-                  <span class="topbar-tooltip">Bộ lọc</span>
-                </a>
-              </div>
-              <div class="item-utility-topbar">
                 <a href="javascript:;" class="icon-item-utility wth-tooltip">
                   <img src="/img-fix/icon/icon-download-black.svg" alt="" />
                   <span class="topbar-tooltip">Xuất báo cáo</span>
@@ -76,9 +66,6 @@
                     <div class="imt-title-table">
                       <p class="txt-title-table">Công nợ hiện tại</p>
                     </div>
-                    <div class="imt-title-table">
-                      <p class="txt-title-table">Trạng thái</p>
-                    </div>
                     <div class="imt-title-table imt-btn-table">
                       <p class="txt-title-table"></p>
                     </div>
@@ -112,15 +99,6 @@
                         <p class="txt-content-table text-blue">
                           {{ formatCurrency(supplier.currentDebt) }}
                         </p>
-                      </div>
-
-                      <div class="imt-content-table">
-                        <div class="ct-dots-6">
-                          <div class="txt-wth-dots blue">
-                            <div class="custom-status-dot"></div>
-                            <p class="txt-m-content-table">Đang hợp tác</p>
-                          </div>
-                        </div>
                       </div>
 
                       <div class="imt-content-table imt-btn-table">
@@ -196,14 +174,6 @@
       </div>
     </div>
 
-    <TopbarFilterPopup
-      v-model:open="isFilterPopupOpen"
-      v-model="filters"
-      :anchor-rect="filterAnchorRect"
-      title="Bộ lọc danh sách"
-      :fields="filterFields"
-    />
-
     <Teleport to="body">
       <div
         class="popup-export-file ct-popup-width-540 new-popup-common"
@@ -236,6 +206,14 @@
                         maxlength="50"
                         placeholder="Nhập mã nhà cung cấp"
                       />
+                      <div class="ct-form-2025">
+                        <button
+                          class="button-ktra"
+                          @click.prevent="handleGenerateCode"
+                        >
+                          <span class="text">Tạo</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -342,19 +320,6 @@ const isEditMode = ref(false);
 const isSubmitting = ref(false);
 const openActionId = ref<number | null>(null);
 const searchQuery = ref("");
-const isFilterPopupOpen = ref(false);
-const filterAnchorRect = ref<DOMRectReadOnly | null>(null);
-const filters = ref<Record<string, string | number>>({
-  status: "",
-});
-const filterFields = [
-  {
-    key: "status",
-    label: "Trạng thái",
-    type: "select" as const,
-    options: [{ label: "Đang hợp tác", value: "ACTIVE" }],
-  },
-];
 
 const defaultForm: SupplierFormPayload = {
   id: undefined,
@@ -373,26 +338,18 @@ const normalizeText = (value: unknown) =>
     .trim()
     .toLowerCase();
 
-const openFilterPopup = (event?: MouseEvent) => {
-  if (event?.currentTarget instanceof HTMLElement) {
-    filterAnchorRect.value = event.currentTarget.getBoundingClientRect();
-  }
-  isFilterPopupOpen.value = true;
-};
-
 const filteredSuppliers = computed(() => {
   const keyword = normalizeText(searchQuery.value);
 
   return (suppliers.value || []).filter((supplier) => {
     const matchesSearch =
       !keyword ||
-      [supplier.code, supplier.name, supplier.phone, supplier.currentDebt, "ACTIVE"]
+      [supplier.code, supplier.name, supplier.phone, supplier.currentDebt]
         .map(normalizeText)
         .join(" ")
         .includes(keyword);
-    const matchesStatus = !filters.value.status || filters.value.status === "ACTIVE";
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 });
 
@@ -400,9 +357,22 @@ const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
 };
 
+const getExistingSupplierCodes = () =>
+  (suppliers.value || []).map((supplier) => supplier.code);
+
+const handleGenerateCode = () => {
+  formData.value.code = generateModuleCode(
+    "supplier",
+    getExistingSupplierCodes(),
+  );
+};
+
 const openCreatePopup = () => {
   isEditMode.value = false;
-  formData.value = { ...defaultForm };
+  formData.value = {
+    ...defaultForm,
+    code: generateModuleCode("supplier", getExistingSupplierCodes()),
+  };
   isPopupOpen.value = true;
 };
 

@@ -15,6 +15,10 @@ export const API_ENDPOINTS = {
   authorities: {
     list: "/authorities",
   },
+  ai: {
+    triggerRestock: "/ai/trigger-restock",
+    simulate: (query: string) => `/ai/simulate?${query}`,
+  },
   categories: {
     list: "/categories",
     listSorted: "/categories?size=1000&sort=id,asc",
@@ -30,6 +34,10 @@ export const API_ENDPOINTS = {
     listSorted: "/departments?size=1000&sort=id,asc",
     detail: (id: number | string) => `/departments/${id}`,
   },
+  dashboard: {
+    data: (query = "") => `/dashboard${query ? `?${query}` : ""}`,
+    export: (query: string) => `/dashboard/export?${query}`,
+  },
   employees: {
     list: "/employees",
     listEager: "/employees?size=1000&eagerload=true&sort=id,asc",
@@ -38,7 +46,6 @@ export const API_ENDPOINTS = {
   inventoryBalances: {
     list: "/inventory-balances",
     listPaged: "/inventory-balances?size=1000",
-    listByUpdatedAt: "/inventory-balances?size=1000&sort=updatedAt,desc",
   },
   inventoryTransactions: {
     list: "/inventory-transactions",
@@ -66,6 +73,7 @@ export const API_ENDPOINTS = {
   },
   purchaseOrders: {
     list: "/purchase-orders",
+    listEager: "/purchase-orders?size=1000&eagerload=true&sort=id,desc",
     detail: (id: number | string) => `/purchase-orders/${id}`,
     approve: (id: number | string) => `/purchase-orders/${id}/approve`,
     cancel: (id: number | string) => `/purchase-orders/${id}/cancel`,

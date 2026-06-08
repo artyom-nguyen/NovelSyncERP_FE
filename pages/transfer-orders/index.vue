@@ -288,6 +288,14 @@
                           maxlength="255"
                           placeholder="Nhập mã điều chuyển"
                         />
+                        <div class="ct-form-2025">
+                          <button
+                            class="button-ktra"
+                            @click.prevent="handleGenerateCode"
+                          >
+                            <span class="text">Tạo</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                     <div class="imt-bm-form">
@@ -584,8 +592,21 @@ const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
 };
 
+const handleGenerateCode = () => {
+  formData.value.transferCode = generateModuleCode(
+    "transferOrder",
+    (transferOrders.value || []).map((order) => order.transferCode),
+  );
+};
+
 const openCreatePopup = () => {
-  formData.value = defaultForm();
+  formData.value = {
+    ...defaultForm(),
+    transferCode: generateModuleCode(
+      "transferOrder",
+      (transferOrders.value || []).map((order) => order.transferCode),
+    ),
+  };
   isPopupOpen.value = true;
 };
 

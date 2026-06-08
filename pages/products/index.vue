@@ -7,6 +7,7 @@
             <div class="lst-utility-wrapper">
               <div class="item-utility-topbar">
                 <a
+                  v-if="canManageProducts"
                   href="javascript:;"
                   class="icon-item-utility wth-tooltip"
                   @click="openCreatePopup"
@@ -77,7 +78,10 @@
                       <p class="txt-title-table">Thuộc tính</p>
                     </div>
                     <div class="imt-title-table">
-                      <p class="txt-title-table">Giá cơ sở</p>
+                      <p class="txt-title-table">Giá nhập</p>
+                    </div>
+                    <div class="imt-title-table">
+                      <p class="txt-title-table">Giá bán</p>
                     </div>
                     <div class="imt-title-table">
                       <p class="txt-title-table">Tồn kho</p>
@@ -85,7 +89,7 @@
                     <div class="imt-title-table">
                       <p class="txt-title-table">Trạng thái kho</p>
                     </div>
-                    <div class="imt-title-table imt-btn-table">
+                    <div v-if="canManageProducts" class="imt-title-table imt-btn-table">
                       <p class="txt-title-table"></p>
                     </div>
                   </div>
@@ -127,7 +131,13 @@
 
                       <div class="imt-content-table">
                         <p class="txt-content-table text-blue">
-                          {{ formatCurrency(product.basePrice) }}
+                          {{ formatCurrency(product.purchasePrice) }}
+                        </p>
+                      </div>
+
+                      <div class="imt-content-table">
+                        <p class="txt-content-table text-blue">
+                          {{ formatCurrency(product.sellingPrice) }}
                         </p>
                       </div>
 
@@ -154,7 +164,7 @@
                         </div>
                       </div>
 
-                      <div class="imt-content-table imt-btn-table">
+                      <div v-if="canManageProducts" class="imt-content-table imt-btn-table">
                         <div class="flex-action-crm">
                           <div class="imt-action-crm">
                             <div
@@ -291,11 +301,23 @@
                   </div>
 
                   <div class="imt-bm-form">
-                    <p class="txt-ct-input">Giá cơ sở</p>
+                    <p class="txt-ct-input">Giá nhập</p>
                     <div class="ct-form-input">
                       <input
                         type="number"
-                        v-model="formData.basePrice"
+                        v-model="formData.purchasePrice"
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="imt-bm-form">
+                    <p class="txt-ct-input">Giá bán</p>
+                    <div class="ct-form-input">
+                      <input
+                        type="number"
+                        v-model="formData.sellingPrice"
                         placeholder="0"
                         min="0"
                       />
@@ -381,7 +403,7 @@ definePageMeta({
 
 interface Category {
   id: number;
-  code: string;
+  code?: string;
   name: string;
 }
 
@@ -389,7 +411,8 @@ interface Product {
   id: number;
   sku: string;
   name: string;
-  basePrice: number;
+  purchasePrice: number;
+  sellingPrice: number;
   attributes: string | null;
   category: Category | null;
 }
@@ -403,7 +426,8 @@ interface ProductFormPayload {
   id?: number;
   sku: string;
   name: string;
-  basePrice: number;
+  purchasePrice: number;
+  sellingPrice: number;
   attributes: string;
   categoryId: number | string;
 }
@@ -419,23 +443,30 @@ const filters = ref<Record<string, string | number>>({
   categoryId: "",
   stockStatus: "",
 });
+const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
+const { adminManagerRoles, createRoleChecker, getUserRoles } =
+  useRoutePermissions();
+const userRoles = computed(() => getUserRoles(account.value));
+const hasAnyRole = createRoleChecker(userRoles);
+const canManageProducts = computed(() => hasAnyRole(adminManagerRoles));
 
 const defaultForm: ProductFormPayload = {
   id: undefined,
   sku: "",
   name: "",
-  basePrice: 0,
+  purchasePrice: 0,
+  sellingPrice: 0,
   attributes: "",
   categoryId: "",
 };
 const formData = ref<ProductFormPayload>({ ...defaultForm });
 
 const { data: products, refresh: refreshProducts } =
-  await useAPI<Product[]>(API_ENDPOINTS.products.list);
+  await useAPI<Product[]>(API_ENDPOINTS.products.listSorted);
 const { data: inventoryBalances, refresh: refreshInventoryBalances } =
   await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged);
 const { data: categoriesData } = await useAPI<Category[]>(
-  API_ENDPOINTS.categories.list,
+  API_ENDPOINTS.categories.listSorted,
 );
 
 const filterFields = computed(() => [
@@ -550,19 +581,28 @@ const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
 };
 
+const getExistingProductCodes = () =>
+  (products.value || []).map((product) => product.sku);
+
 const openCreatePopup = () => {
+  if (!canManageProducts.value) return;
   isEditMode.value = false;
-  formData.value = { ...defaultForm };
+  formData.value = {
+    ...defaultForm,
+    sku: generateModuleCode("product", getExistingProductCodes()),
+  };
   isPopupOpen.value = true;
 };
 
 const openEditPopup = (product: Product) => {
+  if (!canManageProducts.value) return;
   isEditMode.value = true;
   formData.value = {
     id: product.id,
     sku: product.sku,
     name: product.name,
-    basePrice: product.basePrice,
+    purchasePrice: product.purchasePrice,
+    sellingPrice: product.sellingPrice,
     attributes: product.attributes || "",
     categoryId: product.category?.id || "",
   };
@@ -576,16 +616,19 @@ const closePopup = () => {
 };
 
 const handleGenerateCode = () => {
-  formData.value.sku = `PRD-${Date.now().toString().slice(-8)}`;
+  formData.value.sku = generateModuleCode("product", getExistingProductCodes());
 };
 
 const handleSubmitProduct = async () => {
+  if (!canManageProducts.value) return;
+
   const validationError = firstValidationError([
     validateRequired(formData.value.sku, "Mã sản phẩm"),
     validateMaxLength(formData.value.sku, 50, "Mã sản phẩm"),
     validateRequired(formData.value.name, "Tên sản phẩm"),
     validateMaxLength(formData.value.name, 255, "Tên sản phẩm"),
-    validateNonNegativeNumber(formData.value.basePrice || 0, "Giá cơ sở"),
+    validateNonNegativeNumber(formData.value.purchasePrice || 0, "Giá nhập"),
+    validateNonNegativeNumber(formData.value.sellingPrice || 0, "Giá bán"),
     validateRequired(formData.value.categoryId, "Nhóm sản phẩm"),
     validateMaxLength(formData.value.attributes, 1000, "Thuộc tính mở rộng"),
   ]);
@@ -604,7 +647,8 @@ const handleSubmitProduct = async () => {
   const payload: any = {
     sku: formData.value.sku.trim(),
     name: formData.value.name.trim(),
-    basePrice: Number(formData.value.basePrice) || 0,
+    purchasePrice: Number(formData.value.purchasePrice) || 0,
+    sellingPrice: Number(formData.value.sellingPrice) || 0,
     attributes: formData.value.attributes.trim() || null,
     category: selectedCategory
       ? {
@@ -650,6 +694,8 @@ const handleSubmitProduct = async () => {
 };
 
 const handleDeleteProduct = async (id: number) => {
+  if (!canManageProducts.value) return;
+
   const isConfirm = await confirmDelete("Bạn có chắc chắn muốn xóa sản phẩm này?");
   if (!isConfirm) return;
 

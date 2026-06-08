@@ -206,6 +206,14 @@
                         maxlength="255"
                         placeholder="Nhập mã nhóm"
                       />
+                      <div class="ct-form-2025">
+                        <button
+                          class="button-ktra"
+                          @click.prevent="handleGenerateCode"
+                        >
+                          <span class="text">Tạo</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -331,9 +339,22 @@ const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
 };
 
+const getExistingCategoryCodes = () =>
+  (categories.value || []).map((category) => category.code);
+
+const handleGenerateCode = () => {
+  formData.value.code = generateModuleCode(
+    "category",
+    getExistingCategoryCodes(),
+  );
+};
+
 const openCreatePopup = () => {
   isEditMode.value = false;
-  formData.value = { ...defaultForm };
+  formData.value = {
+    ...defaultForm,
+    code: generateModuleCode("category", getExistingCategoryCodes()),
+  };
   isPopupOpen.value = true;
 };
 

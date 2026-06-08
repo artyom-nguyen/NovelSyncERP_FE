@@ -30,7 +30,21 @@
                 <a
                   href="javascript:;"
                   class="icon-item-utility wth-tooltip"
+                  v-if="canTriggerRestock"
+                  @click="triggerRestock"
                 >
+                  <img src="/img-fix/icon/icon-storage-blue.svg" alt="" />
+                  <span class="topbar-tooltip">
+                    {{
+                      isTriggeringRestock
+                        ? "AI đang chạy"
+                        : "AI gợi ý nhập hàng"
+                    }}
+                  </span>
+                </a>
+              </div>
+              <div class="item-utility-topbar">
+                <a href="javascript:;" class="icon-item-utility wth-tooltip">
                   <img src="/img-fix/icon/icon-download-black.svg" alt="" />
                   <span class="topbar-tooltip">Xuất báo cáo</span>
                 </a>
@@ -51,7 +65,11 @@
                 <div class="icon-search">
                   <img src="/img-fix/icon/icon-topbar-search.svg" alt="" />
                 </div>
-                <input v-model="searchQuery" type="text" placeholder="Tìm kiếm mã đơn" />
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="Tìm kiếm mã đơn"
+                />
               </div>
             </div>
           </div>
@@ -107,7 +125,7 @@
                       </div>
                       <div class="imt-content-table">
                         <p class="txt-content-table">
-                          {{ formatDate(po.createdAt) }}
+                          {{ formatDate(po.createdDate) }}
                         </p>
                       </div>
                       <div class="imt-content-table">
@@ -156,7 +174,10 @@
 
                               <div
                                 class="imt-action"
-                                v-if="po.status === 'DRAFT' && canApprovePurchaseOrder"
+                                v-if="
+                                  po.status === 'DRAFT' &&
+                                  canApprovePurchaseOrder
+                                "
                               >
                                 <a
                                   href="javascript:;"
@@ -172,7 +193,10 @@
                               </div>
                               <div
                                 class="imt-action"
-                                v-if="po.status === 'APPROVED' && canHandlePurchaseDelivery"
+                                v-if="
+                                  po.status === 'APPROVED' &&
+                                  canHandlePurchaseDelivery
+                                "
                               >
                                 <a
                                   href="javascript:;"
@@ -188,7 +212,10 @@
                               </div>
                               <div
                                 class="imt-action"
-                                v-if="po.status === 'PROCESSING' && canHandlePurchaseDelivery"
+                                v-if="
+                                  po.status === 'PROCESSING' &&
+                                  canHandlePurchaseDelivery
+                                "
                               >
                                 <a
                                   href="javascript:;"
@@ -204,7 +231,10 @@
                               </div>
                               <div
                                 class="imt-action"
-                                v-if="po.status === 'PROCESSING' && canCompletePurchaseOrder"
+                                v-if="
+                                  po.status === 'PROCESSING' &&
+                                  canCompletePurchaseOrder
+                                "
                               >
                                 <a
                                   href="javascript:;"
@@ -232,7 +262,11 @@
                                       src="/img-fix/icon/icon-delete-popup.svg"
                                       alt=""
                                   /></span>
-                                  {{ po.status === 'DRAFT' ? 'Xóa đơn nháp' : 'Hủy đơn' }}
+                                  {{
+                                    po.status === "DRAFT"
+                                      ? "Xóa đơn nháp"
+                                      : "Hủy đơn"
+                                  }}
                                 </a>
                               </div>
                             </div>
@@ -261,7 +295,6 @@
         </div>
       </div>
     </div>
-
 
     <TopbarFilterPopup
       v-model:open="isFilterPopupOpen"
@@ -321,19 +354,6 @@
                     </div>
                     <div class="imt-popup-form">
                       <p class="txt-ct-input">
-                        Ngày <span class="important-text">*</span>
-                      </p>
-                      <div class="ct-form-input">
-                        <input
-                          type="date"
-                          class="text-size-14-light"
-                          v-model="formData.date"
-                        />
-                      </div>
-                    </div>
-
-                    <div class="imt-popup-form">
-                      <p class="txt-ct-input">
                         Nhà cung cấp <span class="important-text">*</span>
                       </p>
                       <div class="ct-form-select">
@@ -359,39 +379,11 @@
                         class="box-supplier-search bg-box-l-blue mt-5px"
                       >
                         <p class="text-size-13-light">
-                          {{
-                            currentSupplier.code || "Chưa cập nhật mã"
-                          }}
+                          {{ currentSupplier.code || "Chưa cập nhật mã" }}
                         </p>
                         <p class="text-size-13-light">
                           {{ currentSupplier.phone || "Chưa cập nhật SĐT" }}
                         </p>
-                      </div>
-                    </div>
-
-                    <div class="imt-popup-form">
-                      <p class="txt-ct-input">Điều khoản thanh toán</p>
-                      <div class="ct-form-select">
-                        <select v-model="formData.paymentTerm">
-                          <option value="TM">Tiền mặt</option>
-                          <option value="CK">Chuyển khoản</option>
-                          <option value="CN">Công nợ</option>
-                        </select>
-                        <span class="icon-select"
-                          ><img
-                            src="/img-fix/icon/icon-arrow-down-new.svg"
-                            alt=""
-                        /></span>
-                      </div>
-                    </div>
-
-                    <div class="imt-popup-form w-100">
-                      <p class="txt-ct-input">Ghi chú</p>
-                      <div class="ct-form-textarea">
-                        <textarea
-                          v-model="formData.note"
-                          placeholder="Ghi chú thêm về đơn hàng..."
-                        ></textarea>
                       </div>
                     </div>
                   </div>
@@ -436,22 +428,13 @@
                               <p class="txt-title-table">Sản phẩm</p>
                             </div>
                             <div class="imt-title-table">
-                              <p class="txt-title-table">ĐVT</p>
-                            </div>
-                            <div class="imt-title-table">
                               <p class="txt-title-table">Tồn hiện tại</p>
                             </div>
                             <div class="imt-title-table">
                               <p class="txt-title-table">SL</p>
                             </div>
                             <div class="imt-title-table">
-                              <p class="txt-title-table">Đơn giá</p>
-                            </div>
-                            <div class="imt-title-table">
-                              <p class="txt-title-table">Giảm giá %</p>
-                            </div>
-                            <div class="imt-title-table">
-                              <p class="txt-title-table">Thuế %</p>
+                              <p class="txt-title-table">Giá nhập</p>
                             </div>
                             <div class="imt-title-table">
                               <p class="txt-title-table">Thành tiền</p>
@@ -471,7 +454,9 @@
                                     v-model="item.productId"
                                     @change="onProductChange(item)"
                                   >
-                                    <option value="" disabled>Chọn sản phẩm</option>
+                                    <option value="" disabled>
+                                      Chọn sản phẩm
+                                    </option>
                                     <option
                                       v-for="product in products"
                                       :key="product.id"
@@ -488,18 +473,17 @@
                                 </div>
                               </div>
                               <div class="imt-content-table">
-                                <div class="ct-form-input">
-                                  <input type="text" v-model="item.unit" />
-                                </div>
-                              </div>
-                              <div class="imt-content-table">
                                 <p
                                   class="txt-m-content-table"
-                                  :class="getInventoryStatusClass(item.productId)"
+                                  :class="
+                                    getInventoryStatusClass(item.productId)
+                                  "
                                   v-if="item.productId"
                                 >
                                   {{
-                                    formatNumber(getQuantityOnHand(item.productId))
+                                    formatNumber(
+                                      getQuantityOnHand(item.productId),
+                                    )
                                   }}
                                   đơn vị
                                 </p>
@@ -521,26 +505,7 @@
                                     type="number"
                                     v-model="item.price"
                                     min="0"
-                                  />
-                                </div>
-                              </div>
-                              <div class="imt-content-table">
-                                <div class="ct-form-input">
-                                  <input
-                                    type="number"
-                                    v-model="item.discount"
-                                    min="0"
-                                    max="100"
-                                  />
-                                </div>
-                              </div>
-                              <div class="imt-content-table">
-                                <div class="ct-form-input">
-                                  <input
-                                    type="number"
-                                    v-model="item.tax"
-                                    min="0"
-                                    max="100"
+                                    disabled
                                   />
                                 </div>
                               </div>
@@ -583,16 +548,6 @@
                         <div class="row-price-flex">
                           <p class="left">Tạm tính</p>
                           <p class="right">{{ formatCurrency(subTotal) }}</p>
-                        </div>
-                        <div class="row-price-flex">
-                          <p class="left">Giảm giá</p>
-                          <p class="right text-blue">
-                            -{{ formatCurrency(totalDiscount) }}
-                          </p>
-                        </div>
-                        <div class="row-price-flex">
-                          <p class="left">Thuế VAT</p>
-                          <p class="right">{{ formatCurrency(totalTax) }}</p>
                         </div>
                         <div class="row-price-flex final-price">
                           <p class="left">Tổng thanh toán:</p>
@@ -672,20 +627,21 @@
                             </button>
                           </div>
                         </div>
-                        <p class="text-size-13-light">
-                          {{ formatFullDate(selectedOrder.createdAt) }}
-                        </p>
                       </div>
                     </div>
                     <div class="right ct-product-title">
                       <div class="ct-label-new">
                         <div
                           class="label-table-new"
-                          :class="getPurchaseStatusLabelClass(selectedOrder.status)"
+                          :class="
+                            getPurchaseStatusLabelClass(selectedOrder.status)
+                          "
                         >
                           <p
                             class="text-size-13-medium"
-                            :class="getPurchaseStatusTextClass(selectedOrder.status)"
+                            :class="
+                              getPurchaseStatusTextClass(selectedOrder.status)
+                            "
                           >
                             {{ formatPurchaseStatus(selectedOrder.status) }}
                           </p>
@@ -715,13 +671,6 @@
                       }}</span></a
                     >
                   </div>
-                  <div
-                    class="item-pill-tab"
-                    :class="{ active: activeDetailTab === 'history' }"
-                    @click="activeDetailTab = 'history'"
-                  >
-                    <a href="javascript:;" class="txt-pill">Lịch sử</a>
-                  </div>
                 </div>
 
                 <div class="box-dc--content">
@@ -742,30 +691,6 @@
                               </p>
                               <p class="text-size-14-rgl">
                                 {{ selectedOrder.poCode }}
-                              </p>
-                            </div>
-                            <div class="imt-info-hs">
-                              <p class="text-size-14-light opacity-6 mb-4px">
-                                Ngày đặt hàng
-                              </p>
-                              <p class="text-size-14-rgl">
-                                {{ formatDate(selectedOrder.createdAt) }}
-                              </p>
-                            </div>
-                            <div class="imt-info-hs w-100">
-                              <p class="text-size-14-light opacity-6 mb-4px">
-                                Địa chỉ giao hàng
-                              </p>
-                              <p class="text-size-14-rgl">
-                                Kho trung tâm - Mặc định
-                              </p>
-                            </div>
-                            <div class="imt-info-hs w-100">
-                              <p class="text-size-14-light opacity-6 mb-4px">
-                                Ghi chú
-                              </p>
-                              <p class="text-size-14-rgl">
-                                Giao hàng trong giờ hành chính
                               </p>
                             </div>
                           </div>
@@ -791,8 +716,7 @@
                             <p>
                               Mã NCC:
                               <span>{{
-                                getFirstSupplier(selectedOrder)?.code ||
-                                "---"
+                                getFirstSupplier(selectedOrder)?.code || "---"
                               }}</span>
                             </p>
                             <p>
@@ -989,31 +913,6 @@
                       </div>
                     </div>
                   </div>
-                  <div
-                    class="block-kt-wrapper-popup"
-                    v-else-if="activeDetailTab === 'history'"
-                  >
-                    <div class="box-border-info-kt">
-                      <p class="text-size-14-medium mb-10">Lịch sử đơn hàng</p>
-                      <div class="lst-inv-out lst-scroll">
-                        <div class="box-border-template">
-                          <div
-                            class="imt-ls-order-nv"
-                            v-for="(hist, index) in orderHistory"
-                            :key="index"
-                          >
-                            <p class="text-14-smb mb-5px">
-                              {{ hist.action }}
-                            </p>
-                            <div class="lst-contract-meta ct-kt-lst">
-                              <p class="txt-contract-meta">{{ hist.user }}</p>
-                              <p class="txt-contract-meta">{{ hist.date }}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1030,7 +929,9 @@
               </div>
               <div
                 class="btn-create-group"
-                v-if="selectedOrder?.status === 'DRAFT' && canApprovePurchaseOrder"
+                v-if="
+                  selectedOrder?.status === 'DRAFT' && canApprovePurchaseOrder
+                "
               >
                 <a
                   href="javascript:;"
@@ -1042,7 +943,10 @@
               </div>
               <div
                 class="btn-create-group"
-                v-if="selectedOrder?.status === 'APPROVED' && canHandlePurchaseDelivery"
+                v-if="
+                  selectedOrder?.status === 'APPROVED' &&
+                  canHandlePurchaseDelivery
+                "
               >
                 <a
                   href="javascript:;"
@@ -1054,7 +958,10 @@
               </div>
               <div
                 class="btn-create-group"
-                v-if="selectedOrder?.status === 'PROCESSING' && canHandlePurchaseDelivery"
+                v-if="
+                  selectedOrder?.status === 'PROCESSING' &&
+                  canHandlePurchaseDelivery
+                "
               >
                 <a
                   href="javascript:;"
@@ -1066,7 +973,10 @@
               </div>
               <div
                 class="btn-create-group"
-                v-if="selectedOrder?.status === 'PROCESSING' && canCompletePurchaseOrder"
+                v-if="
+                  selectedOrder?.status === 'PROCESSING' &&
+                  canCompletePurchaseOrder
+                "
               >
                 <a
                   href="javascript:;"
@@ -1113,7 +1023,7 @@ interface PurchaseOrder {
   code?: string;
   status: string;
   totalAmount: number;
-  createdAt?: string;
+  createdDate?: string | null;
   employee?: EmployeeLight;
   supplier?: Supplier | null;
   warehouse?: {
@@ -1129,11 +1039,16 @@ interface PurchaseOrderItem {
   productName?: string;
   productCode?: string;
   supplier?: Supplier | null;
-  unit: string;
   quantity: number;
   price: number;
-  discount: number;
-  tax: number;
+}
+
+interface Product {
+  id: number;
+  sku: string;
+  name: string;
+  purchasePrice: number;
+  sellingPrice?: number;
 }
 
 interface InventoryBalance {
@@ -1148,6 +1063,7 @@ const openActionId = ref<number | null>(null);
 const isCreatePopupOpen = ref(false);
 const isDetailPopupOpen = ref(false);
 const isSubmitting = ref(false);
+const isTriggeringRestock = ref(false);
 const selectedOrder = ref<PurchaseOrder | null>(null);
 const activeDetailTab = ref("general");
 const searchQuery = ref("");
@@ -1155,8 +1071,6 @@ const isFilterPopupOpen = ref(false);
 const filterAnchorRect = ref<DOMRectReadOnly | null>(null);
 const filters = ref<Record<string, string | number>>({
   status: "",
-  createdFrom: "",
-  createdTo: "",
 });
 const filterFields = [
   {
@@ -1171,22 +1085,15 @@ const filterFields = [
       { label: "Đã hủy", value: "CANCELLED" },
     ],
   },
-  {
-    key: "createdFrom",
-    label: "Từ ngày",
-    type: "date" as const,
-  },
-  {
-    key: "createdTo",
-    label: "Đến ngày",
-    type: "date" as const,
-  },
 ];
 
-const { data: purchaseOrders, refresh: refreshOrders } =
-  await useAPI<PurchaseOrder[]>(API_ENDPOINTS.purchaseOrders.list);
+const { data: purchaseOrders, refresh: refreshOrders } = await useAPI<
+  PurchaseOrder[]
+>(API_ENDPOINTS.purchaseOrders.listEager);
 const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
-const { data: products } = await useAPI<any[]>(API_ENDPOINTS.products.list);
+const { data: products } = await useAPI<Product[]>(
+  API_ENDPOINTS.products.listSorted,
+);
 const { data: suppliers } = await useAPI<any[]>(API_ENDPOINTS.suppliers.list);
 const { data: warehouses } = await useAPI<any[]>(API_ENDPOINTS.warehouses.list);
 const { data: inventoryBalances, refresh: refreshInventoryBalances } =
@@ -1212,9 +1119,52 @@ const canCompletePurchaseOrder = computed(() =>
 const canCancelPurchaseOrder = computed(() =>
   hasAnyRole(getActionRoles("purchaseOrders.cancel")),
 );
+const canTriggerRestock = computed(() => userRoles.value.length > 0);
 const canCancelPurchaseOrderStatus = (status: string) =>
   canCancelPurchaseOrder.value &&
   ["DRAFT", "APPROVED", "PROCESSING"].includes(status);
+
+const triggerRestock = async () => {
+  if (!canTriggerRestock.value || isTriggeringRestock.value) return;
+  const existingOrderIds = new Set(
+    (purchaseOrders.value || []).map((order) => order.id),
+  );
+  isTriggeringRestock.value = true;
+  try {
+    const { error } = await useAPI<string>(
+      API_ENDPOINTS.ai.triggerRestock,
+      {
+        method: "POST",
+      },
+    );
+    if (error.value) {
+      toast.fromMessage(
+        getApiErrorMessage(error.value, "Không thể chạy AI gợi ý nhập hàng"),
+      );
+      return;
+    }
+    await refreshOrders();
+
+    const newDraftOrders = (purchaseOrders.value || []).filter(
+      (order) => order.status === "DRAFT" && !existingOrderIds.has(order.id),
+    );
+
+    if (newDraftOrders.length > 0) {
+      searchQuery.value = "";
+      filters.value.status = "";
+      toast.fromMessage(
+        `AI đã tạo ${newDraftOrders.length} đơn nhập hàng nháp mới. Danh sách đã được cập nhật.`,
+      );
+      return;
+    }
+
+    toast.fromMessage(
+      "AI đã chạy nhưng chưa tạo đơn nhập hàng nháp mới. Có thể chưa có lịch sử đơn bán hoàn thành, AI Python không đề xuất nhập thêm, hoặc dữ liệu tồn kho chưa đủ.",
+    );
+  } finally {
+    isTriggeringRestock.value = false;
+  }
+};
 
 const formatPurchaseStatus = (status: string | null | undefined) => {
   const statusMap: Record<string, string> = {
@@ -1250,26 +1200,11 @@ const normalizeText = (value: unknown) =>
     .trim()
     .toLowerCase();
 
-const toDateValue = (value: string | number) =>
-  value ? new Date(String(value)).getTime() : null;
-
 const openFilterPopup = (event?: MouseEvent) => {
   if (event?.currentTarget instanceof HTMLElement) {
     filterAnchorRect.value = event.currentTarget.getBoundingClientRect();
   }
   isFilterPopupOpen.value = true;
-};
-
-const isInDateRange = (dateStr: string | null | undefined) => {
-  if (!filters.value.createdFrom && !filters.value.createdTo) return true;
-  if (!dateStr) return false;
-
-  const time = new Date(dateStr).getTime();
-  const fromTime = toDateValue(filters.value.createdFrom);
-  const toTime = toDateValue(filters.value.createdTo);
-  const endOfToDate = toTime ? toTime + 24 * 60 * 60 * 1000 - 1 : null;
-
-  return (!fromTime || time >= fromTime) && (!endOfToDate || time <= endOfToDate);
 };
 
 const filteredPurchaseOrders = computed(() => {
@@ -1278,14 +1213,21 @@ const filteredPurchaseOrders = computed(() => {
   return (purchaseOrders.value || []).filter((order) => {
     const matchesSearch =
       !keyword ||
-      [order.poCode, order.employee?.fullName, order.supplier?.name, order.warehouse?.name, order.totalAmount, order.status]
+      [
+        order.poCode,
+        order.employee?.fullName,
+        order.supplier?.name,
+        order.warehouse?.name,
+        order.totalAmount,
+        order.status,
+      ]
         .map(normalizeText)
         .join(" ")
         .includes(keyword);
     const matchesStatus =
       !filters.value.status || order.status === filters.value.status;
 
-    return matchesSearch && matchesStatus && isInDateRange(order.createdAt);
+    return matchesSearch && matchesStatus;
   });
 });
 
@@ -1293,23 +1235,20 @@ const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
 };
 
+const getExistingPurchaseOrderCodes = () =>
+  (purchaseOrders.value || []).map((order) => order.poCode);
+
 const generateCode = () =>
-  `PO_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}_${Math.floor(Math.random() * 1000)}`;
+  generateModuleCode("purchaseOrder", getExistingPurchaseOrderCodes());
 
 const defaultForm = () => ({
   code: generateCode(),
-  date: new Date().toISOString().slice(0, 10),
   supplierId: "",
-  paymentTerm: "TM",
-  note: "",
   items: [
     {
       productId: "",
-      unit: "Đơn vị",
       quantity: 1,
       price: 0,
-      discount: 0,
-      tax: 0,
     } as PurchaseOrderItem,
   ],
 });
@@ -1376,11 +1315,8 @@ const formatNumber = (value: number | null | undefined) =>
 const addItem = () => {
   formData.value.items.push({
     productId: "",
-    unit: "Đơn vị",
     quantity: 1,
     price: 0,
-    discount: 0,
-    tax: 0,
   });
 };
 
@@ -1391,39 +1327,22 @@ const removeItem = (index: number) => {
 };
 
 const onProductChange = (item: PurchaseOrderItem) => {
-  const product = products.value?.find((entry) => entry.id === Number(item.productId));
+  const product = products.value?.find(
+    (entry) => entry.id === Number(item.productId),
+  );
   if (product) {
-    item.price = product.basePrice || 0;
+    item.price = Number(product.purchasePrice) || 0;
   }
 };
 
-const itemTotal = (item: PurchaseOrderItem) => {
-  const base = (item.quantity || 0) * (item.price || 0);
-  const discounted = base - (base * (item.discount || 0)) / 100;
-  const afterTax = discounted + (discounted * (item.tax || 0)) / 100;
-  return afterTax;
-};
+const itemTotal = (item: PurchaseOrderItem) =>
+  (item.quantity || 0) * (item.price || 0);
 
 const subTotal = computed(() =>
   formData.value.items.reduce(
     (sum, item) => sum + (item.quantity || 0) * (item.price || 0),
     0,
   ),
-);
-
-const totalDiscount = computed(() =>
-  formData.value.items.reduce((sum, item) => {
-    const base = (item.quantity || 0) * (item.price || 0);
-    return sum + (base * (item.discount || 0)) / 100;
-  }, 0),
-);
-
-const totalTax = computed(() =>
-  formData.value.items.reduce((sum, item) => {
-    const base = (item.quantity || 0) * (item.price || 0);
-    const discounted = base - (base * (item.discount || 0)) / 100;
-    return sum + (discounted * (item.tax || 0)) / 100;
-  }, 0),
 );
 
 const finalTotal = computed(() =>
@@ -1534,11 +1453,11 @@ const openDetailPopup = async (id: number) => {
     return;
   }
 
-  const matchedLines = (poData.value.purchaseOrderLines && poData.value.purchaseOrderLines.length > 0)
-    ? poData.value.purchaseOrderLines
-    : (linesData.value || []).filter(
-    (line) => line.purchaseOrder?.id === id,
-  );
+  const matchedLines =
+    poData.value.purchaseOrderLines &&
+    poData.value.purchaseOrderLines.length > 0
+      ? poData.value.purchaseOrderLines
+      : (linesData.value || []).filter((line) => line.purchaseOrder?.id === id);
 
   selectedOrder.value = {
     ...poData.value,
@@ -1547,11 +1466,8 @@ const openDetailPopup = async (id: number) => {
       productCode: line.product?.sku || "---",
       productName: line.product?.name || "---",
       supplier: poData.value?.supplier || null,
-      unit: "Đơn vị",
       quantity: line.quantity || 0,
       price: line.unitPrice || 0,
-      discount: 0,
-      tax: 0,
     })),
   };
 
@@ -1607,9 +1523,12 @@ const handleStartDelivery = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error } = await useAPI(API_ENDPOINTS.purchaseOrders.startDelivery(id), {
-    method: "PUT",
-  });
+  const { error } = await useAPI(
+    API_ENDPOINTS.purchaseOrders.startDelivery(id),
+    {
+      method: "PUT",
+    },
+  );
 
   if (error.value) {
     const backEndMsg =
@@ -1635,9 +1554,12 @@ const handleConfirmDelivery = async (id: number) => {
   });
   if (!isConfirm) return;
 
-  const { error } = await useAPI(API_ENDPOINTS.purchaseOrders.confirmDelivery(id), {
-    method: "PUT",
-  });
+  const { error } = await useAPI(
+    API_ENDPOINTS.purchaseOrders.confirmDelivery(id),
+    {
+      method: "PUT",
+    },
+  );
 
   if (error.value) {
     const backEndMsg =
@@ -1690,9 +1612,12 @@ const handleDeleteOrder = async (id: number) => {
   );
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(API_ENDPOINTS.purchaseOrders.cancel(id), {
-    method: "PUT",
-  });
+  const { error: deleteError } = await useAPI(
+    API_ENDPOINTS.purchaseOrders.cancel(id),
+    {
+      method: "PUT",
+    },
+  );
 
   if (deleteError.value) {
     const backEndMsg =
@@ -1710,7 +1635,11 @@ const handleDeleteOrder = async (id: number) => {
 };
 
 const formatCurrency = (amount: number | null | undefined) => {
-  if (amount == null) return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(0);
+  if (amount == null)
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(0);
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
@@ -1720,6 +1649,7 @@ const formatCurrency = (amount: number | null | undefined) => {
 const formatDate = (dateStr: string | null | undefined) => {
   if (!dateStr) return "---";
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "---";
   return new Intl.DateTimeFormat("vi-VN", {
     day: "2-digit",
     month: "2-digit",
@@ -1728,55 +1658,4 @@ const formatDate = (dateStr: string | null | undefined) => {
     minute: "2-digit",
   }).format(date);
 };
-
-const formatFullDate = (dateStr: string | null | undefined) => {
-  if (!dateStr) return "---";
-  const date = new Date(dateStr);
-  return new Intl.DateTimeFormat("vi-VN", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(date);
-};
-const orderHistory = computed(() => {
-  if (!selectedOrder.value) return [];
-
-  const history = [];
-
-  history.push({
-    action: "Tạo đơn hàng",
-    user: selectedOrder.value.employee?.fullName || "Hệ thống",
-    date: formatDateTimeHistory(selectedOrder.value.createdAt),
-  });
-
-  if (selectedOrder.value.status === "COMPLETED") {
-    history.push({
-      action: "Duyệt đơn hàng",
-      user: selectedOrder.value.employee?.fullName || "Hệ thống",
-      date: formatDateTimeHistory(selectedOrder.value.createdAt),
-    });
-  }
-
-  return history;
-});
-
-const formatDateTimeHistory = (dateStr: string | null | undefined) => {
-  if (!dateStr) return "---";
-  const date = new Date(dateStr);
-
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
-
-  const hh = String(date.getHours()).padStart(2, "0");
-  const min = String(date.getMinutes()).padStart(2, "0");
-
-  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-};
 </script>
-
-
-
-
-

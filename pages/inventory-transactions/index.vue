@@ -248,7 +248,8 @@ interface Product {
   id: number;
   sku: string | null;
   name: string | null;
-  basePrice: number | null;
+  purchasePrice: number | null;
+  sellingPrice: number | null;
   attributes: string | null;
   category: Category | null;
 }

@@ -28,6 +28,7 @@ export const permissionRoleGroups = {
   inventory: ["ROLE_ADMIN", "ROLE_WAREHOUSE", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
   catalog: ["ROLE_ADMIN", "ROLE_PURCHASER", "ROLE_WAREHOUSE", "ROLE_MANAGER"],
   finance: ["ROLE_ADMIN", "ROLE_ACCOUNTANT"],
+  reports: ["ROLE_ADMIN", "ROLE_ACCOUNTANT"],
   adminManager: ["ROLE_ADMIN", "ROLE_MANAGER"],
   adminOnly: ["ROLE_ADMIN"],
 };
@@ -75,6 +76,7 @@ const routeAccessRules: RouteAccessRule[] = [
   { path: "/product-categories", roles: permissionRoleGroups.catalog },
   { path: "/suppliers", roles: permissionRoleGroups.catalog },
   { path: "/payments", roles: permissionRoleGroups.finance },
+  { path: "/reports", roles: permissionRoleGroups.reports },
   { path: "/users", roles: permissionRoleGroups.adminOnly },
   { path: "/employees", roles: permissionRoleGroups.adminManager },
   { path: "/departments", roles: permissionRoleGroups.adminManager },
@@ -152,6 +154,7 @@ export const useRoutePermissions = () => {
     createRoleChecker,
     fallbackAuthorityNames,
     financeRoles: permissionRoleGroups.finance,
+    reportRoles: permissionRoleGroups.reports,
     formatRole,
     getActionRoles,
     getRouteAccessRule,

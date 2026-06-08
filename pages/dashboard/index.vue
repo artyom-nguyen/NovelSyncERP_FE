@@ -55,8 +55,8 @@
                     <p class="number">{{ productsList.length }}</p>
                   </div>
                   <div class="imt-school-schedule green-db-card">
-                    <p class="title">Đơn hôm nay</p>
-                    <p class="number">{{ todayOrderCount }}</p>
+                    <p class="title">Tổng đơn</p>
+                    <p class="number">{{ totalOrderCount }}</p>
                   </div>
                   <div class="imt-school-schedule red-db-card">
                     <p class="title">Tồn kho thấp</p>
@@ -248,14 +248,14 @@
                   <div class="info">
                     <p class="text-14-smb">Hoạt động gần đây</p>
                     <p class="text-size-12-light text-gray-99a">
-                      Đơn nhập và đơn bán mới nhất trong hệ thống
+                      Đơn nhập và đơn bán trong hệ thống
                     </p>
                   </div>
                 </div>
               </div>
               <div class="right">
                 <p class="text-size-12-medium txt-blue">
-                  {{ formatCurrency(monthSalesAmount) }}
+                  {{ formatCurrency(totalSalesAmount) }}
                 </p>
               </div>
             </div>
@@ -275,7 +275,7 @@
                       <p class="text-size-13-medium">{{ activity.title }}</p>
                       <div class="lst-contract-meta lst-dot-date">
                         <p class="txt-contract-meta">{{ activity.amount }}</p>
-                        <p class="txt-contract-meta">{{ activity.date }}</p>
+                        <p class="txt-contract-meta">{{ activity.type }}</p>
                       </div>
                     </div>
                   </div>
@@ -349,7 +349,6 @@
                         :class="{
                           'day-empty': !day,
                           active: isToday(day),
-                          'has-activity': hasCalendarActivity(day),
                         }"
                       >
                         {{ day || "" }}
@@ -523,16 +522,15 @@ interface Supplier {
   id: number;
   code: string | null;
   name: string;
-  address?: string | null;
   phone?: string | null;
-  status?: string | null;
 }
 
 interface Product {
   id: number;
   sku: string;
   name: string;
-  basePrice: number;
+  purchasePrice: number;
+  sellingPrice: number;
   attributes?: string | null;
   category?: Category | null;
 }
@@ -549,14 +547,12 @@ interface Order {
   poCode?: string;
   status: string;
   totalAmount: number;
-  createdAt?: string;
   user?: OrderUser | null;
 }
 
 interface InventoryBalance {
   id: number;
   quantity: number;
-  updatedAt?: string;
   product?: Product | null;
 }
 
@@ -584,6 +580,7 @@ const {
   getUserRoles,
   inventoryRoles,
   purchaseRoles,
+  reportRoles,
   salesRoles,
   transferRoles,
 } = useRoutePermissions();
@@ -598,7 +595,7 @@ const canLoadPurchaseData = computed(() => hasAnyRole(purchaseRoles));
 const canLoadInventoryData = computed(() => hasAnyRole(inventoryRoles));
 
 const { data: products, refresh: refreshProducts } = await useAPI<Product[]>(
-  API_ENDPOINTS.products.list,
+  API_ENDPOINTS.products.listSorted,
   { immediate: canLoadCatalogData.value || canLoadInventoryData.value },
 );
 const { data: categories, refresh: refreshCategories } = await useAPI<
@@ -746,6 +743,12 @@ const quickActions = [
     icon: "/img-fix/icon/icon-user-add-blue.svg",
     cardClass: "card-red",
   },
+  {
+    title: "Báo cáo",
+    route: "/reports",
+    icon: "/img-fix/icon/icon-info-duetone.svg",
+    cardClass: "card-purple",
+  },
 ];
 
 const quickActionRoleMap: Record<string, string[]> = {
@@ -755,6 +758,7 @@ const quickActionRoleMap: Record<string, string[]> = {
   "/inventory-balances": inventoryRoles,
   "/suppliers": catalogRoles,
   "/users": adminOnlyRoles,
+  "/reports": reportRoles,
 };
 
 const permittedQuickActions = computed(() =>
@@ -852,6 +856,14 @@ const moduleCards: ModuleCard[] = [
     roles: financeRoles,
   },
   {
+    title: "Báo cáo",
+    description: "Doanh thu, lợi nhuận và sản phẩm nổi bật",
+    route: "/reports",
+    icon: "/img-fix/icon/icon-info-duetone.svg",
+    colorClass: "mdl-linear-purple",
+    roles: reportRoles,
+  },
+  {
     title: "Tài khoản",
     description: "Quản trị người dùng",
     route: "/users",
@@ -927,7 +939,7 @@ const urgentActions = computed(() => {
       key: `sales-${order.id}`,
       title: `Đơn bán ${getOrderCode(order)} đang chờ duyệt`,
       meta: formatCurrency(order.totalAmount),
-      time: formatDate(order.createdAt),
+      time: formatStatus(order.status),
       route: "/sales-orders",
       icon: "/img-fix/icon/icon-bold-checksquare-yellow.svg",
       rowClass: "tr-job-yellow",
@@ -943,7 +955,7 @@ const urgentActions = computed(() => {
       key: `purchase-${order.id}`,
       title: `Đơn nhập ${getOrderCode(order)} đang chờ duyệt`,
       meta: formatCurrency(order.totalAmount),
-      time: formatDate(order.createdAt),
+      time: formatStatus(order.status),
       route: "/purchase-orders",
       icon: "/img-fix/icon/icon-bold-checksquare-yellow.svg",
       rowClass: "tr-job-blue",
@@ -964,15 +976,16 @@ const urgentActions = computed(() => {
   return [...stocks, ...sales, ...purchases].slice(0, 5);
 });
 
-const todayOrderCount = computed(() => {
+const totalOrderCount = computed(() => {
   const orders = [...salesOrderList.value, ...purchaseOrderList.value];
-  return orders.filter((order) => isSameDate(order.createdAt, today)).length;
+  return orders.length;
 });
 
-const monthSalesAmount = computed(() =>
-  salesOrderList.value
-    .filter((order) => isSameMonth(order.createdAt, today))
-    .reduce((sum, order) => sum + (order.totalAmount || 0), 0),
+const totalSalesAmount = computed(() =>
+  salesOrderList.value.reduce(
+    (sum, order) => sum + (order.totalAmount || 0),
+    0,
+  ),
 );
 
 const totalInventoryQuantity = computed(() =>
@@ -981,7 +994,8 @@ const totalInventoryQuantity = computed(() =>
 
 const totalInventoryValue = computed(() =>
   balancesWithProduct.value.reduce(
-    (sum, item) => sum + (item.quantity || 0) * (item.product?.basePrice || 0),
+    (sum, item) =>
+      sum + (item.quantity || 0) * (item.product?.purchasePrice || 0),
     0,
   ),
 );
@@ -996,30 +1010,26 @@ const topInventoryProducts = computed(() =>
 const recentActivities = computed(() => {
   const sales = salesOrderList.value.map((order) => ({
     key: `sales-${order.id}`,
+    orderId: order.id,
     title: `Đơn bán ${getOrderCode(order)}`,
     amount: formatCurrency(order.totalAmount),
-    date: formatDate(order.createdAt),
+    type: "Đơn bán",
     status: formatStatus(order.status),
-    createdAt: order.createdAt,
     iconClass: "line-blue",
   }));
 
   const purchases = purchaseOrderList.value.map((order) => ({
     key: `purchase-${order.id}`,
+    orderId: order.id,
     title: `Đơn nhập ${getOrderCode(order)}`,
     amount: formatCurrency(order.totalAmount),
-    date: formatDate(order.createdAt),
+    type: "Đơn nhập",
     status: formatStatus(order.status),
-    createdAt: order.createdAt,
     iconClass: "line-orange",
   }));
 
   return [...sales, ...purchases]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt || 0).getTime() -
-        new Date(a.createdAt || 0).getTime(),
-    )
+    .sort((a, b) => b.orderId - a.orderId)
     .slice(0, 6);
 });
 
@@ -1089,7 +1099,7 @@ const dashboardBriefing = computed(() => {
     `${lowStockBalances.value.length} sản phẩm tồn kho thấp`,
   ];
 
-  return `${rolePermissionSummary.value} Hôm nay hệ thống ghi nhận ${parts.join(", ")}. Doanh thu đơn bán trong tháng hiện là ${formatCurrency(monthSalesAmount.value)}, tổng tồn kho ${totalInventoryQuantity.value} đơn vị.`;
+  return `${rolePermissionSummary.value} Hệ thống ghi nhận ${parts.join(", ")}. Tổng giá trị đơn bán hiện là ${formatCurrency(totalSalesAmount.value)}, tổng tồn kho ${totalInventoryQuantity.value} đơn vị.`;
 });
 
 const getDaysInMonth = (month: number, year: number) => {
@@ -1152,13 +1162,6 @@ const isToday = (day: number | null) => {
   );
 };
 
-const hasCalendarActivity = (day: number | null) => {
-  if (!day) return false;
-  const selectedDate = new Date(currentYear.value, currentMonth.value, day);
-  const orders = [...salesOrderList.value, ...purchaseOrderList.value];
-  return orders.some((order) => isSameDate(order.createdAt, selectedDate));
-};
-
 const refreshDashboard = async () => {
   const refreshTasks: Promise<unknown>[] = [];
 
@@ -1188,19 +1191,6 @@ const formatCurrency = (amount: number | null | undefined) => {
   }).format(amount || 0);
 };
 
-const formatDate = (dateStr: string | null | undefined) => {
-  if (!dateStr) return "---";
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return "---";
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-};
-
 const formatStatus = (status: string | null | undefined) => {
   const statusMap: Record<string, string> = {
     DRAFT: "Nháp",
@@ -1219,24 +1209,4 @@ const getPercent = (value: number, total: number) => {
   return Math.min(Math.round((value / total) * 100), 100);
 };
 
-const isSameDate = (dateStr: string | null | undefined, date: Date) => {
-  if (!dateStr) return false;
-  const sourceDate = new Date(dateStr);
-  if (Number.isNaN(sourceDate.getTime())) return false;
-  return (
-    sourceDate.getDate() === date.getDate() &&
-    sourceDate.getMonth() === date.getMonth() &&
-    sourceDate.getFullYear() === date.getFullYear()
-  );
-};
-
-const isSameMonth = (dateStr: string | null | undefined, date: Date) => {
-  if (!dateStr) return false;
-  const sourceDate = new Date(dateStr);
-  if (Number.isNaN(sourceDate.getTime())) return false;
-  return (
-    sourceDate.getMonth() === date.getMonth() &&
-    sourceDate.getFullYear() === date.getFullYear()
-  );
-};
 </script>

@@ -69,9 +69,6 @@
                     <div class="imt-title-table justify-content-end">
                       <p class="txt-title-table">Tồn kho</p>
                     </div>
-                    <div class="imt-title-table">
-                      <p class="txt-title-table">Cập nhật cuối</p>
-                    </div>
                     <div class="imt-title-table imt-btn-table">
                       <p class="txt-title-table"></p>
                     </div>
@@ -158,12 +155,6 @@
                               </p>
                             </div>
                           </div>
-                        </div>
-
-                        <div class="imt-content-table">
-                          <p class="txt-content-table opacity-8">
-                            {{ formatDateTime(item.updatedAt) }}
-                          </p>
                         </div>
 
                         <div class="imt-content-table imt-btn-table">
@@ -362,7 +353,8 @@ interface Product {
   id: number;
   sku: string | null;
   name: string | null;
-  basePrice: number | null;
+  purchasePrice: number | null;
+  sellingPrice: number | null;
   attributes: string | null;
   category: Category | null;
 }
@@ -370,7 +362,6 @@ interface Product {
 interface InventoryBalance {
   id: number;
   quantity: number;
-  updatedAt: string | null;
   product: Product | null;
 }
 
@@ -391,8 +382,6 @@ const isFilterPopupOpen = ref(false);
 const filterAnchorRect = ref<DOMRectReadOnly | null>(null);
 const filters = ref<Record<string, string | number>>({
   stockStatus: "",
-  updatedFrom: "",
-  updatedTo: "",
 });
 const filterFields = [
   {
@@ -404,16 +393,6 @@ const filterFields = [
       { label: "Sắp hết", value: "LOW_STOCK" },
       { label: "Hết hàng", value: "OUT_OF_STOCK" },
     ],
-  },
-  {
-    key: "updatedFrom",
-    label: "Cập nhật từ ngày",
-    type: "date" as const,
-  },
-  {
-    key: "updatedTo",
-    label: "Cập nhật đến ngày",
-    type: "date" as const,
   },
 ];
 
@@ -430,7 +409,7 @@ const fetchBalances = async () => {
   pendingBalance.value = true;
 
   const { data, error } = await useAPI<InventoryBalance[]>(
-    API_ENDPOINTS.inventoryBalances.listByUpdatedAt,
+    API_ENDPOINTS.inventoryBalances.listPaged,
   );
 
   if (error.value) {
@@ -447,9 +426,6 @@ const fetchBalances = async () => {
 const normalizeText = (value: string | number | null | undefined) =>
   String(value ?? "").toLowerCase();
 
-const toDateValue = (value: string | number) =>
-  value ? new Date(String(value)).getTime() : null;
-
 const openFilterPopup = (event?: MouseEvent) => {
   if (event?.currentTarget instanceof HTMLElement) {
     filterAnchorRect.value = event.currentTarget.getBoundingClientRect();
@@ -461,18 +437,6 @@ const getStockStatus = (quantity: number) => {
   if (quantity <= 0) return "OUT_OF_STOCK";
   if (quantity < 20) return "LOW_STOCK";
   return "IN_STOCK";
-};
-
-const isInUpdatedDateRange = (dateStr: string | null | undefined) => {
-  if (!filters.value.updatedFrom && !filters.value.updatedTo) return true;
-  if (!dateStr) return false;
-
-  const time = new Date(dateStr).getTime();
-  const fromTime = toDateValue(filters.value.updatedFrom);
-  const toTime = toDateValue(filters.value.updatedTo);
-  const endOfToDate = toTime ? toTime + 24 * 60 * 60 * 1000 - 1 : null;
-
-  return (!fromTime || time >= fromTime) && (!endOfToDate || time <= endOfToDate);
 };
 
 const formatProductAttributes = (product: Product | null) => {
@@ -513,11 +477,7 @@ const filteredBalances = computed(() => {
       !filters.value.stockStatus ||
       getStockStatus(item.quantity) === filters.value.stockStatus;
 
-    return (
-      matchesSearch &&
-      matchesStock &&
-      isInUpdatedDateRange(item.updatedAt)
-    );
+    return matchesSearch && matchesStock;
   });
 });
 
