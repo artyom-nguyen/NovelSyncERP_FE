@@ -7,6 +7,7 @@
             <div class="lst-utility-wrapper">
               <div class="item-utility-topbar">
                 <a
+                  v-if="canCreateTransferOrder"
                   href="javascript:;"
                   class="icon-item-utility wth-tooltip"
                   @click="openCreatePopup"
@@ -126,7 +127,10 @@
                               :class="{ 'open-box': openActionId === order.id }"
                             >
                               <div
-                                v-if="order.status === 'DRAFT'"
+                                v-if="
+                                  order.status === 'DRAFT' &&
+                                  canApproveTransferOrder
+                                "
                                 class="imt-action"
                               >
                                 <a
@@ -143,7 +147,10 @@
                                 </a>
                               </div>
                               <div
-                                v-if="order.status === 'APPROVED'"
+                                v-if="
+                                  order.status === 'APPROVED' &&
+                                  canHandleTransferDelivery
+                                "
                                 class="imt-action"
                               >
                                 <a
@@ -162,7 +169,10 @@
                                 </a>
                               </div>
                               <div
-                                v-if="order.status === 'PROCESSING'"
+                                v-if="
+                                  order.status === 'PROCESSING' &&
+                                  canHandleTransferDelivery
+                                "
                                 class="imt-action"
                               >
                                 <a
@@ -181,7 +191,10 @@
                                 </a>
                               </div>
                               <div
-                                v-if="order.status === 'PROCESSING'"
+                                v-if="
+                                  order.status === 'PROCESSING' &&
+                                  canCompleteTransferOrder
+                                "
                                 class="imt-action"
                               >
                                 <a
@@ -199,8 +212,9 @@
                               </div>
                               <div
                                 v-if="
-                                  order.status === 'DRAFT' ||
-                                  order.status === 'APPROVED'
+                                  canCancelTransferOrder &&
+                                  (order.status === 'DRAFT' ||
+                                    order.status === 'APPROVED')
                                 "
                                 class="imt-action delete-action"
                               >
@@ -539,6 +553,7 @@ const formData = ref<TransferForm>(defaultForm());
 const { data: transferOrders, refresh: refreshTransferOrders } = await useAPI<
   TransferOrder[]
 >(API_ENDPOINTS.transferOrders.listEager);
+const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
 const { data: warehousesData } = await useAPI<SimpleRef[]>(
   API_ENDPOINTS.warehouses.listSorted,
 );
@@ -548,6 +563,25 @@ const { data: productsData } = await useAPI<SimpleRef[]>(
 
 const warehouses = computed(() => warehousesData.value || []);
 const products = computed(() => productsData.value || []);
+const { createRoleChecker, getActionRoles, getUserRoles } =
+  useRoutePermissions();
+const userRoles = computed(() => getUserRoles(account.value));
+const hasAnyRole = createRoleChecker(userRoles);
+const canCreateTransferOrder = computed(() =>
+  hasAnyRole(getActionRoles("transferOrders.create")),
+);
+const canApproveTransferOrder = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+);
+const canHandleTransferDelivery = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_SHIPPER"]),
+);
+const canCompleteTransferOrder = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+);
+const canCancelTransferOrder = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+);
 const normalizeText = (value: unknown) =>
   String(value || "")
     .trim()
@@ -600,6 +634,7 @@ const handleGenerateCode = () => {
 };
 
 const openCreatePopup = () => {
+  if (!canCreateTransferOrder.value) return;
   formData.value = {
     ...defaultForm(),
     transferCode: generateModuleCode(

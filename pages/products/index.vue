@@ -533,6 +533,28 @@ const formatAttributes = (attributes: string | null | undefined) => {
   return trimmed;
 };
 
+const parseAttributesJson = (attributes: string) => {
+  const trimmed = attributes.trim();
+  if (!trimmed) {
+    return {
+      error: false as const,
+      value: null,
+    };
+  }
+
+  try {
+    return {
+      error: false as const,
+      value: JSON.stringify(JSON.parse(trimmed)),
+    };
+  } catch {
+    return {
+      error: "Thuộc tính mở rộng phải là JSON hợp lệ, ví dụ: {\"color\":\"Đỏ\"}",
+      value: null,
+    };
+  }
+};
+
 const openFilterPopup = (event?: MouseEvent) => {
   if (event?.currentTarget instanceof HTMLElement) {
     filterAnchorRect.value = event.currentTarget.getBoundingClientRect();
@@ -638,6 +660,12 @@ const handleSubmitProduct = async () => {
     return;
   }
 
+  const parsedAttributes = parseAttributesJson(formData.value.attributes);
+  if (parsedAttributes.error) {
+    toast.fromMessage(parsedAttributes.error);
+    return;
+  }
+
   isSubmitting.value = true;
 
   const selectedCategory = categoriesData.value?.find(
@@ -649,7 +677,7 @@ const handleSubmitProduct = async () => {
     name: formData.value.name.trim(),
     purchasePrice: Number(formData.value.purchasePrice) || 0,
     sellingPrice: Number(formData.value.sellingPrice) || 0,
-    attributes: formData.value.attributes.trim() || null,
+    attributes: parsedAttributes.value,
     category: selectedCategory
       ? {
           id: selectedCategory.id,

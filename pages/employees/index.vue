@@ -63,9 +63,6 @@
                     <div class="imt-title-table">
                       <p class="txt-title-table">Kho phụ trách</p>
                     </div>
-                    <div class="imt-title-table">
-                      <p class="txt-title-table">Quản lý</p>
-                    </div>
                     <div class="imt-title-table imt-btn-table">
                       <p class="txt-title-table"></p>
                     </div>
@@ -99,11 +96,6 @@
                       <div class="imt-content-table">
                         <p class="txt-content-table">
                           {{ employee.scopedWarehouse?.name || "---" }}
-                        </p>
-                      </div>
-                      <div class="imt-content-table">
-                        <p class="txt-content-table">
-                          {{ employee.manager?.fullName || "---" }}
                         </p>
                       </div>
                       <div class="imt-content-table imt-btn-table">
@@ -286,27 +278,6 @@
                       </span>
                     </div>
                   </div>
-                  <div class="imt-bm-form">
-                    <p class="txt-ct-input">Quản lý trực tiếp</p>
-                    <div class="ct-form-select">
-                      <select v-model="formData.managerId">
-                        <option value="">Chưa chọn</option>
-                        <option
-                          v-for="manager in managerOptions"
-                          :key="manager.id"
-                          :value="manager.id"
-                        >
-                          {{ manager.fullName }}
-                        </option>
-                      </select>
-                      <span class="icon-select">
-                        <img
-                          src="/img-fix/icon/icon-arrow-down-new.svg"
-                          alt=""
-                        />
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -356,7 +327,6 @@ interface Employee {
   fullName: string;
   phone?: string | null;
   user?: SimpleRef | null;
-  manager?: SimpleRef | null;
   scopedWarehouse?: SimpleRef | null;
   department?: SimpleRef | null;
 }
@@ -366,7 +336,6 @@ interface EmployeeForm {
   fullName: string;
   phone: string;
   userId: number | string;
-  managerId: number | string;
   scopedWarehouseId: number | string;
   departmentId: number | string;
 }
@@ -383,7 +352,6 @@ const defaultForm: EmployeeForm = {
   fullName: "",
   phone: "",
   userId: "",
-  managerId: "",
   scopedWarehouseId: "",
   departmentId: "",
 };
@@ -405,9 +373,6 @@ const { data: departmentsData, refresh: refreshDepartments } = await useAPI<
 const users = computed(() => usersData.value || []);
 const warehouses = computed(() => warehousesData.value || []);
 const departments = computed(() => departmentsData.value || []);
-const managerOptions = computed(() =>
-  (employees.value || []).filter((employee) => employee.id !== formData.value.id),
-);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -422,7 +387,6 @@ const filteredEmployees = computed(() =>
       employee.user?.login,
       employee.department?.name,
       employee.scopedWarehouse?.name,
-      employee.manager?.fullName,
     ]
       .map(normalizeText)
       .join(" ")
@@ -463,7 +427,6 @@ const openEditPopup = (employee: Employee) => {
     fullName: employee.fullName,
     phone: employee.phone || "",
     userId: employee.user?.id || "",
-    managerId: employee.manager?.id || "",
     scopedWarehouseId: employee.scopedWarehouse?.id || "",
     departmentId: employee.department?.id || "",
   };
@@ -500,7 +463,6 @@ const handleSubmitEmployee = async () => {
     fullName: formData.value.fullName.trim(),
     phone: trimOrNull(formData.value.phone),
     user: refOrNull(formData.value.userId),
-    manager: refOrNull(formData.value.managerId),
     scopedWarehouse: refOrNull(formData.value.scopedWarehouseId),
     department: refOrNull(formData.value.departmentId),
     ...(isEditMode.value ? { id: formData.value.id } : {}),

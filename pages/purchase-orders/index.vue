@@ -1444,20 +1444,11 @@ const openDetailPopup = async (id: number) => {
     return;
   }
 
-  const { data: linesData, error: linesError } = await useAPI<any[]>(
-    API_ENDPOINTS.purchaseOrderLines.listPaged,
-  );
-
-  if (linesError.value) {
-    toast.fromMessage("Không thể tải danh sách sản phẩm trong đơn.");
-    return;
-  }
-
   const matchedLines =
     poData.value.purchaseOrderLines &&
     poData.value.purchaseOrderLines.length > 0
       ? poData.value.purchaseOrderLines
-      : (linesData.value || []).filter((line) => line.purchaseOrder?.id === id);
+      : [];
 
   selectedOrder.value = {
     ...poData.value,

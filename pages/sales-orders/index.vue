@@ -1858,18 +1858,7 @@ const openDetailPopup = async (id: number) => {
     return;
   }
 
-  const { data: linesData, error: linesError } = await useAPI<any[]>(
-    API_ENDPOINTS.salesOrderLines.listPaged,
-  );
-  if (linesError.value) {
-    toast.fromMessage("Không thể tải danh sách sản phẩm trong đơn.");
-    return;
-  }
-
-  const matchedLines =
-    soData.value.salesOrderLines && soData.value.salesOrderLines.length > 0
-      ? soData.value.salesOrderLines
-      : (linesData.value || []).filter((line) => line.salesOrder?.id === id);
+  const matchedLines = soData.value.salesOrderLines || [];
 
   selectedOrder.value = {
     ...soData.value,

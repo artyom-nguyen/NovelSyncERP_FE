@@ -68,9 +68,6 @@ export const API_ENDPOINTS = {
     listSorted: "/products?size=1000&sort=id,asc",
     detail: (id: number | string) => `/products/${id}`,
   },
-  purchaseOrderLines: {
-    listPaged: "/purchase-order-lines?size=1000",
-  },
   purchaseOrders: {
     list: "/purchase-orders",
     listEager: "/purchase-orders?size=1000&eagerload=true&sort=id,desc",
@@ -83,14 +80,12 @@ export const API_ENDPOINTS = {
     startDelivery: (id: number | string) =>
       `/purchase-orders/${id}/start-delivery`,
   },
-  salesOrderLines: {
-    listPaged: "/sales-order-lines?size=1000",
-  },
   salesOrders: {
     list: "/sales-orders",
     detail: (id: number | string) => `/sales-orders/${id}`,
     approve: (id: number | string) => `/sales-orders/${id}/approve`,
     cancel: (id: number | string) => `/sales-orders/${id}/cancel`,
+    complete: (id: number | string) => `/sales-orders/${id}/complete`,
     confirmDelivery: (id: number | string) =>
       `/sales-orders/${id}/confirm-delivery`,
     startDelivery: (id: number | string) =>

@@ -58,6 +58,9 @@
                       <p class="txt-title-table">Số tiền</p>
                     </div>
                     <div class="imt-title-table">
+                      <p class="txt-title-table">Trạng thái</p>
+                    </div>
+                    <div class="imt-title-table">
                       <p class="txt-title-table">Đơn tham chiếu</p>
                     </div>
                     <div class="imt-title-table">
@@ -92,6 +95,14 @@
                       <div class="imt-content-table">
                         <p class="txt-content-table text-blue">
                           {{ formatCurrency(payment.amount) }}
+                        </p>
+                      </div>
+                      <div class="imt-content-table">
+                        <p
+                          class="txt-content-table"
+                          :class="paymentStatusClass(payment.status)"
+                        >
+                          {{ paymentStatusLabel(payment.status) }}
                         </p>
                       </div>
                       <div class="imt-content-table">
@@ -132,7 +143,10 @@
                                 'open-box': openActionId === payment.id,
                               }"
                             >
-                              <div class="imt-action">
+                              <div
+                                v-if="!payment.status || payment.status === 'PENDING'"
+                                class="imt-action"
+                              >
                                 <a
                                   href="javascript:;"
                                   @click="handleApprove(payment.id)"
@@ -280,6 +294,7 @@ interface Payment {
   paymentCode: string;
   type: string;
   amount: number;
+  status?: "PENDING" | "COMPLETED" | string;
   referenceOrderId?: number | null;
   createdAt: string;
   customer?: PartnerRef | null;
@@ -334,6 +349,14 @@ const filteredPayments = computed(() =>
 
 const typeLabel = (type: string) =>
   ({ RECEIPT: "Phiếu thu", DISBURSEMENT: "Phiếu chi" })[type] || type;
+
+const paymentStatusLabel = (status?: string | null) =>
+  ({ PENDING: "Chờ duyệt", COMPLETED: "Đã hoàn thành" })[status || ""] ||
+  status ||
+  "---";
+
+const paymentStatusClass = (status?: string | null) =>
+  status === "PENDING" ? "text-orange" : "text-green";
 
 const formatCurrency = (value?: number | null) =>
   value == null
