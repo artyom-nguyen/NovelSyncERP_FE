@@ -1,17 +1,20 @@
 import { Client, type IMessage } from "@stomp/stompjs";
 
-interface NotificationDTO {
+export interface NotificationDTO {
   id: number;
   title: string;
   message: string;
   isRead: boolean;
-  createdAt: string;
+  type: "SYSTEM" | "WARNING" | "SUCCESS" | "ERROR";
+  referenceId?: number;
+  createdAt: any;
+  recipient?: any;
 }
 
 const NOTIFICATION_STORAGE_KEY = "novel_notifications";
 const USER_NOTIFICATION_DESTINATION = "/user/queue/notifications";
 
-export const useNotifications = async () => {
+export const useNotifications = () => {
   const config = useRuntimeConfig();
   const { syncFromStorage, token: authToken } = useAuthToken();
   const toast = useToast();
@@ -20,15 +23,9 @@ export const useNotifications = async () => {
   const initialNotifs = ref<NotificationDTO[]>([]);
   const notifications = ref<NotificationDTO[]>([]);
   const isFetchingNotifications = ref(false);
-  let notificationPollTimer: ReturnType<typeof window.setInterval> | null = null;
+  let notificationPollTimer: number | null = null;
   let stompClient: Client | null = null;
 
-  if (authToken.value) {
-    const { data } = await useAPI<NotificationDTO[]>(
-      API_ENDPOINTS.notifications.latest,
-    );
-    initialNotifs.value = data.value || [];
-  }
 
   const unreadCount = computed(
     () => notifications.value.filter((n) => !n.isRead).length,
@@ -47,11 +44,19 @@ export const useNotifications = async () => {
     );
   };
 
+  const parseDate = (dateStr: any) => {
+    if (!dateStr) return 0;
+    if (typeof dateStr === "object" && dateStr.epochSecond != null) return dateStr.epochSecond * 1000;
+    if (typeof dateStr === "number") return dateStr < 100000000000 ? dateStr * 1000 : dateStr;
+    const time = new Date(dateStr).getTime();
+    return isNaN(time) ? 0 : time;
+  };
+
   const sortNotifications = (notifs: NotificationDTO[]) =>
     notifs
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          parseDate(b.createdAt) - parseDate(a.createdAt),
       )
       .slice(0, 30);
 
@@ -173,7 +178,7 @@ export const useNotifications = async () => {
 
   const showRealtimeToast = (noti: NotificationDTO) => {
     const message = [noti.title, noti.message].filter(Boolean).join(" - ");
-    toast.info(message || "Bạn có thông báo mới", "Thông báo mới");
+    toast.success(message || "Bạn có thông báo mới", "Thông báo mới");
   };
 
   const connectWebSocket = async () => {
@@ -255,10 +260,20 @@ export const useNotifications = async () => {
     saveToLocal(notifications.value);
   };
 
-  const formatDateTime = (dateStr: string | null) => {
+  const formatDateTime = (dateStr: any) => {
     if (!dateStr) return "---";
-    const date = new Date(dateStr);
-    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} lúc ${date.getHours()}:${String(date.getMinutes()).padStart(2, "0")}`;
+    let date;
+    if (typeof dateStr === "object" && dateStr.epochSecond != null) {
+      date = new Date(dateStr.epochSecond * 1000);
+    } else if (typeof dateStr === "number") {
+      date = new Date(dateStr < 100000000000 ? dateStr * 1000 : dateStr);
+    } else {
+      date = new Date(dateStr);
+    }
+    
+    if (isNaN(date.getTime())) return "---";
+
+    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()} lúc ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   };
 
   const handleVisibilityChange = () => {

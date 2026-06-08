@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="wrap">
     <div
       class="wp-site-2025"
@@ -107,7 +107,18 @@
                             }"
                           >
                             <div class="icon notification-item-icon">
-                              <span class="notification-dot"></span>
+                              <img
+                                :src="
+                                  ntf.type === 'ERROR'
+                                    ? '/img-fix/icon/icon-warning-red.svg'
+                                    : ntf.type === 'SUCCESS'
+                                    ? '/img-fix/icon/icon-black-checked.svg'
+                                    : ntf.type === 'WARNING'
+                                    ? '/img-fix/icon/icon-warning-phos.svg'
+                                    : '/img-fix/icon/icon-info-duetone.svg'
+                                "
+                                alt="icon"
+                              />
                             </div>
                             <div class="content">
                               <div class="notification-row-title">
@@ -862,7 +873,7 @@ const {
   notifications,
   toggleNotificationBox: toggleNotificationBoxBase,
   unreadCount,
-} = await useNotifications();
+} = useNotifications();
 
 if (!authToken.value && process.client) {
   await navigateTo("/");
