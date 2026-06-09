@@ -214,7 +214,8 @@
                                 v-if="
                                   canCancelTransferOrder &&
                                   (order.status === 'DRAFT' ||
-                                    order.status === 'APPROVED')
+                                    order.status === 'APPROVED' ||
+                                    order.status === 'PROCESSING')
                                 "
                                 class="imt-action delete-action"
                               >
@@ -229,23 +230,6 @@
                                     />
                                   </span>
                                   Hủy đơn
-                                </a>
-                              </div>
-                              <div
-                                v-if="order.status === 'DRAFT'"
-                                class="imt-action delete-action"
-                              >
-                                <a
-                                  href="javascript:;"
-                                  @click="handleDeleteTransferOrder(order.id)"
-                                >
-                                  <span class="icon">
-                                    <img
-                                      src="/img-fix/icon/icon-delete-popup.svg"
-                                      alt=""
-                                    />
-                                  </span>
-                                  Xóa
                                 </a>
                               </div>
                             </div>

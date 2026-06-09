@@ -594,6 +594,28 @@
                     </div>
                     <div class="imt-popup-form">
                       <p class="txt-ct-input">
+                        Kho xuất <span class="important-text">*</span>
+                      </p>
+                      <div class="ct-form-select">
+                        <select v-model="formData.warehouseId">
+                          <option value="" disabled>Chọn kho xuất</option>
+                          <option
+                            v-for="warehouse in warehouses"
+                            :key="warehouse.id"
+                            :value="warehouse.id"
+                          >
+                            {{ warehouse.name }}
+                          </option>
+                        </select>
+                        <span class="icon-select"
+                          ><img
+                            src="/img-fix/icon/icon-arrow-down-new.svg"
+                            alt=""
+                        /></span>
+                      </div>
+                    </div>
+                    <div class="imt-popup-form">
+                      <p class="txt-ct-input">
                         Khách mua <span class="important-text">*</span>
                       </p>
                       <div class="ct-form-input">
@@ -1502,6 +1524,7 @@ const generateCode = () =>
 
 const defaultForm = () => ({
   code: generateCode(),
+  warehouseId: "" as number | string,
   partnerName: "",
   partnerPhone: "",
   items: [
@@ -1589,7 +1612,11 @@ const getPartnerInfo = (order: SalesOrder | null): PartnerInfo => {
 };
 
 const openCreatePopup = () => {
-  formData.value = defaultForm();
+  const nextForm = defaultForm();
+  if (warehouses.value?.[0]?.id) {
+    nextForm.warehouseId = warehouses.value[0].id;
+  }
+  formData.value = nextForm;
   isCreatePopupOpen.value = true;
 };
 
@@ -1745,6 +1772,7 @@ const submitOrder = async () => {
   const validationError = firstValidationError([
     validateRequired(formData.value.code, "Mã đơn bán"),
     validateMaxLength(formData.value.code, 50, "Mã đơn bán"),
+    validateRequired(formData.value.warehouseId, "Kho xuất"),
     validateRequired(formData.value.partnerName, "Tên đối tác"),
     validateMaxLength(formData.value.partnerName, 255, "Tên đối tác"),
     validateRequired(formData.value.partnerPhone, "Số điện thoại đối tác"),
@@ -1790,8 +1818,8 @@ const submitOrder = async () => {
       throw customerError.value || new Error("Không thể tạo khách hàng.");
     }
 
-    const warehouse = warehouses.value?.[0];
-    if (!warehouse?.id) {
+    const warehouseId = Number(formData.value.warehouseId);
+    if (!warehouseId) {
       throw new Error("Chưa có kho để tạo đơn bán hàng.");
     }
 
@@ -1803,7 +1831,7 @@ const submitOrder = async () => {
         id: createdCustomer.value.id,
       },
       warehouse: {
-        id: warehouse.id,
+        id: warehouseId,
       },
       salesOrderLines: validItems.map((item) => ({
         quantity: Number(item.quantity),

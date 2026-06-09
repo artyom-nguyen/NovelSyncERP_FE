@@ -354,6 +354,28 @@
                     </div>
                     <div class="imt-popup-form">
                       <p class="txt-ct-input">
+                        Kho nhập <span class="important-text">*</span>
+                      </p>
+                      <div class="ct-form-select">
+                        <select v-model="formData.warehouseId">
+                          <option value="" disabled>Chọn kho nhập</option>
+                          <option
+                            v-for="warehouse in warehouses"
+                            :key="warehouse.id"
+                            :value="warehouse.id"
+                          >
+                            {{ warehouse.name }}
+                          </option>
+                        </select>
+                        <span class="icon-select"
+                          ><img
+                            src="/img-fix/icon/icon-arrow-down-new.svg"
+                            alt=""
+                        /></span>
+                      </div>
+                    </div>
+                    <div class="imt-popup-form">
+                      <p class="txt-ct-input">
                         Nhà cung cấp <span class="important-text">*</span>
                       </p>
                       <div class="ct-form-select">
@@ -1057,6 +1079,9 @@ interface InventoryBalance {
   product: {
     id: number;
   } | null;
+  warehouse?: {
+    id: number;
+  } | null;
 }
 
 const openActionId = ref<number | null>(null);
@@ -1243,6 +1268,7 @@ const generateCode = () =>
 
 const defaultForm = () => ({
   code: generateCode(),
+  warehouseId: "" as number | string,
   supplierId: "",
   items: [
     {
@@ -1256,7 +1282,11 @@ const defaultForm = () => ({
 const formData = ref(defaultForm());
 
 const openCreatePopup = () => {
-  formData.value = defaultForm();
+  const nextForm = defaultForm();
+  if (warehouses.value?.[0]?.id) {
+    nextForm.warehouseId = warehouses.value[0].id;
+  }
+  formData.value = nextForm;
   isCreatePopupOpen.value = true;
   refreshInventoryBalances();
 };
@@ -1287,9 +1317,13 @@ const getProductCode = (productId: number | "") => {
 
 const inventoryByProductId = computed(() => {
   const map = new Map<number, InventoryBalance>();
+  const warehouseId = Number(formData.value.warehouseId);
 
   (inventoryBalances.value || []).forEach((balance) => {
-    if (balance.product?.id) {
+    if (
+      balance.product?.id &&
+      (!warehouseId || !balance.warehouse?.id || balance.warehouse.id === warehouseId)
+    ) {
       map.set(balance.product.id, balance);
     }
   });
@@ -1360,6 +1394,7 @@ const submitOrder = async () => {
   const validationError = firstValidationError([
     validateRequired(formData.value.code, "Mã đơn nhập"),
     validateMaxLength(formData.value.code, 50, "Mã đơn nhập"),
+    validateRequired(formData.value.warehouseId, "Kho nhập"),
     validateRequired(formData.value.supplierId, "Nhà cung cấp"),
     validItems.length > 0 ? "" : "Vui lòng chọn ít nhất 1 sản phẩm hợp lệ!",
     invalidItem ? "Số lượng sản phẩm phải là số nguyên lớn hơn 0." : "",
@@ -1378,8 +1413,8 @@ const submitOrder = async () => {
   isSubmitting.value = true;
 
   try {
-    const warehouse = warehouses.value?.[0];
-    if (!warehouse?.id) {
+    const warehouseId = Number(formData.value.warehouseId);
+    if (!warehouseId) {
       throw new Error("Chưa có kho để tạo đơn nhập hàng.");
     }
 
@@ -1391,7 +1426,7 @@ const submitOrder = async () => {
         id: Number(formData.value.supplierId),
       },
       warehouse: {
-        id: warehouse.id,
+        id: warehouseId,
       },
       purchaseOrderLines: validItems.map((item) => ({
         quantity: Number(item.quantity),
