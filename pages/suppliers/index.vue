@@ -133,7 +133,10 @@
                                   Chỉnh sửa
                                 </a>
                               </div>
-                              <div class="imt-action delete-action">
+                              <div
+                                v-if="canDeleteSuppliers"
+                                class="imt-action delete-action"
+                              >
                                 <a
                                   href="javascript:;"
                                   @click="handleDeleteSupplier(supplier.id)"
@@ -332,6 +335,12 @@ const formData = ref<SupplierFormPayload>({ ...defaultForm });
 
 const { data: suppliers, refresh: refreshSuppliers } =
   await useAPI<Supplier[]>(API_ENDPOINTS.suppliers.list);
+const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
+const { adminManagerRoles, createRoleChecker, getUserRoles } =
+  useRoutePermissions();
+const userRoles = computed(() => getUserRoles(account.value));
+const hasAnyRole = createRoleChecker(userRoles);
+const canDeleteSuppliers = computed(() => hasAnyRole(adminManagerRoles));
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -461,6 +470,8 @@ const handleSubmitSupplier = async () => {
 };
 
 const handleDeleteSupplier = async (id: number) => {
+  if (!canDeleteSuppliers.value) return;
+
   const isConfirm = await confirmDelete(
     "Bạn có chắc chắn muốn xóa nhà cung cấp này?",
   );

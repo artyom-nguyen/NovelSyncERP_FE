@@ -372,6 +372,7 @@
                         <div class="text">Đơn bán hàng</div>
                       </NuxtLink>
                       <NuxtLink
+                        v-if="hasAnyRole(customerRoles)"
                         to="/customers"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -436,7 +437,7 @@
                         <div class="text">Kho hàng</div>
                       </NuxtLink>
                       <NuxtLink
-                        v-if="hasAnyRole(inventoryRoles)"
+                        v-if="hasAnyRole(inventoryBalanceRoles)"
                         to="/inventory-balances"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -447,7 +448,7 @@
                         <div class="text">Số dư tồn kho</div>
                       </NuxtLink>
                       <NuxtLink
-                        v-if="hasAnyRole(inventoryRoles)"
+                        v-if="hasAnyRole(inventoryTransactionRoles)"
                         to="/inventory-transactions"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -483,7 +484,7 @@
                     </div>
                     <div class="nav-child-lv1">
                       <NuxtLink
-                        v-if="hasAnyRole(catalogRoles)"
+                        v-if="hasAnyRole(productRoles)"
                         to="/products"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -494,7 +495,7 @@
                         <div class="text">Sản phẩm</div>
                       </NuxtLink>
                       <NuxtLink
-                        v-if="hasAnyRole(catalogRoles)"
+                        v-if="hasAnyRole(categoryRoles)"
                         to="/product-categories"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -505,7 +506,7 @@
                         <div class="text">Nhóm sản phẩm</div>
                       </NuxtLink>
                       <NuxtLink
-                        v-if="hasAnyRole(catalogRoles)"
+                        v-if="hasAnyRole(supplierRoles)"
                         to="/suppliers"
                         class="nav-parent-child"
                         active-class="active-nav"
@@ -973,12 +974,18 @@ interface WorkNavGroup {
 const {
   adminManagerRoles,
   catalogRoles,
+  categoryRoles,
+  customerRoles,
   financeRoles,
   getActionRoles,
+  inventoryBalanceRoles,
   inventoryRoles,
+  inventoryTransactionRoles,
+  productRoles,
   purchaseRoles,
   reportRoles,
   salesRoles,
+  supplierRoles,
   transferRoles,
 } = useRoutePermissions();
 const adminOnlyRoles = getActionRoles("admin.users");
@@ -1001,6 +1008,7 @@ const workNavGroups: WorkNavGroup[] = [
       {
         label: "Khách hàng",
         to: "/customers",
+        roles: customerRoles,
         description: "Danh sách khách hàng và công nợ",
       },
     ],
@@ -1031,13 +1039,13 @@ const workNavGroups: WorkNavGroup[] = [
       {
         label: "Số dư tồn kho",
         to: "/inventory-balances",
-        roles: inventoryRoles,
+        roles: inventoryBalanceRoles,
         description: "Kiểm tra tồn thực tế",
       },
       {
         label: "Giao dịch tồn kho",
         to: "/inventory-transactions",
-        roles: inventoryRoles,
+        roles: inventoryTransactionRoles,
         description: "Lịch sử biến động kho",
       },
     ],
@@ -1050,16 +1058,19 @@ const workNavGroups: WorkNavGroup[] = [
       {
         label: "Sản phẩm",
         to: "/products",
+        roles: productRoles,
         description: "Thông tin sản phẩm",
       },
       {
         label: "Nhóm sản phẩm",
         to: "/product-categories",
+        roles: categoryRoles,
         description: "Nhóm phân loại sản phẩm",
       },
       {
         label: "Nhà cung cấp",
         to: "/suppliers",
+        roles: supplierRoles,
         description: "Thông tin nhà cung cấp",
       },
     ],
@@ -1107,19 +1118,27 @@ const mobileNavItems: NavItem[] = [
   { label: "Tổng quan", to: "/dashboard" },
   { label: "Báo cáo", to: "/reports", roles: reportRoles },
   { label: "Đơn bán hàng", to: "/sales-orders", roles: salesRoles },
-  { label: "Khách hàng", to: "/customers", roles: salesRoles },
+  { label: "Khách hàng", to: "/customers", roles: customerRoles },
   { label: "Đơn nhập hàng", to: "/purchase-orders", roles: purchaseRoles },
   { label: "Đơn điều chuyển", to: "/transfer-orders", roles: transferRoles },
   { label: "Kho hàng", to: "/warehouses", roles: adminManagerRoles },
-  { label: "Số dư tồn kho", to: "/inventory-balances", roles: inventoryRoles },
+  {
+    label: "Số dư tồn kho",
+    to: "/inventory-balances",
+    roles: inventoryBalanceRoles,
+  },
   {
     label: "Giao dịch tồn kho",
     to: "/inventory-transactions",
-    roles: inventoryRoles,
+    roles: inventoryTransactionRoles,
   },
-  { label: "Sản phẩm", to: "/products", roles: catalogRoles },
-  { label: "Nhóm sản phẩm", to: "/product-categories", roles: catalogRoles },
-  { label: "Nhà cung cấp", to: "/suppliers", roles: catalogRoles },
+  { label: "Sản phẩm", to: "/products", roles: productRoles },
+  {
+    label: "Nhóm sản phẩm",
+    to: "/product-categories",
+    roles: categoryRoles,
+  },
+  { label: "Nhà cung cấp", to: "/suppliers", roles: supplierRoles },
   { label: "Thanh toán", to: "/payments", roles: financeRoles },
   { label: "Tài khoản", to: "/users", roles: ["ROLE_ADMIN"] },
   { label: "Nhân viên", to: "/employees", roles: adminManagerRoles },

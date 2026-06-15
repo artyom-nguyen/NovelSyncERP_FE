@@ -5,7 +5,7 @@
         <div class="main-tab">
           <div class="block-utility-topbar">
             <div class="lst-utility-wrapper">
-              <div class="item-utility-topbar">
+              <div v-if="canManagePayments" class="item-utility-topbar">
                 <a
                   href="javascript:;"
                   class="icon-item-utility wth-tooltip"
@@ -72,7 +72,10 @@
                     <div class="imt-title-table">
                       <p class="txt-title-table">Ngày tạo</p>
                     </div>
-                    <div class="imt-title-table imt-btn-table">
+                    <div
+                      v-if="canManagePayments"
+                      class="imt-title-table imt-btn-table"
+                    >
                       <p class="txt-title-table"></p>
                     </div>
                   </div>
@@ -125,7 +128,10 @@
                           {{ formatDateTime(payment.createdAt) }}
                         </p>
                       </div>
-                      <div class="imt-content-table imt-btn-table">
+                      <div
+                        v-if="canManagePayments"
+                        class="imt-content-table imt-btn-table"
+                      >
                         <div class="flex-action-crm">
                           <div class="imt-action-crm">
                             <div
@@ -322,8 +328,19 @@ const formData = ref<DisbursementForm>({ ...defaultForm });
 const { data: payments, refresh: refreshPayments } = await useAPI<Payment[]>(
   API_ENDPOINTS.payments.listEager,
 );
+const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
+const { createRoleChecker, getActionRoles, getUserRoles } =
+  useRoutePermissions();
+const userRoles = computed(() => getUserRoles(account.value));
+const hasAnyRole = createRoleChecker(userRoles);
+const canManagePayments = computed(() =>
+  hasAnyRole(getActionRoles("payments.approve")),
+);
 const { data: suppliersData } = await useAPI<PartnerRef[]>(
   API_ENDPOINTS.suppliers.listSorted,
+  {
+    immediate: canManagePayments.value,
+  },
 );
 
 const suppliers = computed(() => suppliersData.value || []);

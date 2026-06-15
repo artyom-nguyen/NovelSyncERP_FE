@@ -255,7 +255,7 @@
                               >
                                 <a
                                   href="javascript:;"
-                                  @click="handleDeleteOrder(po.id)"
+                                  @click="handleDeleteOrder(po)"
                                 >
                                   <span class="icon"
                                     ><img
@@ -1116,14 +1116,12 @@ const { data: purchaseOrders, refresh: refreshOrders } = await useAPI<
   PurchaseOrder[]
 >(API_ENDPOINTS.purchaseOrders.listEager);
 const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
-const { data: products } = await useAPI<Product[]>(
-  API_ENDPOINTS.products.listSorted,
-);
-const { data: suppliers } = await useAPI<any[]>(API_ENDPOINTS.suppliers.list);
-const { data: warehouses } = await useAPI<any[]>(API_ENDPOINTS.warehouses.list);
-const { data: inventoryBalances, refresh: refreshInventoryBalances } =
-  await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged);
-const { createRoleChecker, getActionRoles, getUserRoles } =
+const {
+  adminManagerRoles,
+  createRoleChecker,
+  getActionRoles,
+  getUserRoles,
+} =
   useRoutePermissions();
 
 const userRoles = computed(() => getUserRoles(account.value));
@@ -1131,6 +1129,9 @@ const hasAnyRole = createRoleChecker(userRoles);
 
 const canCreatePurchaseOrder = computed(() =>
   hasAnyRole(getActionRoles("purchaseOrders.create")),
+);
+const canDeletePurchaseOrder = computed(() =>
+  hasAnyRole(getActionRoles("purchaseOrders.delete")),
 );
 const canApprovePurchaseOrder = computed(() =>
   hasAnyRole(getActionRoles("purchaseOrders.approve")),
@@ -1145,9 +1146,48 @@ const canCancelPurchaseOrder = computed(() =>
   hasAnyRole(getActionRoles("purchaseOrders.cancel")),
 );
 const canTriggerRestock = computed(() => userRoles.value.length > 0);
+const canLoadWarehouses = computed(() => hasAnyRole(adminManagerRoles));
+const canLoadInventoryBalances = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
+);
 const canCancelPurchaseOrderStatus = (status: string) =>
-  canCancelPurchaseOrder.value &&
-  ["DRAFT", "APPROVED", "PROCESSING"].includes(status);
+  (status === "DRAFT" && canDeletePurchaseOrder.value) ||
+  (["APPROVED", "PROCESSING"].includes(status) &&
+    canCancelPurchaseOrder.value);
+
+const { data: products } = await useAPI<Product[]>(
+  API_ENDPOINTS.products.listSorted,
+  {
+    immediate: canCreatePurchaseOrder.value,
+  },
+);
+const { data: suppliers } = await useAPI<any[]>(API_ENDPOINTS.suppliers.list, {
+  immediate: canCreatePurchaseOrder.value,
+});
+const { data: warehouseOptions } = await useAPI<any[]>(
+  API_ENDPOINTS.warehouses.list,
+  {
+    immediate: canLoadWarehouses.value,
+  },
+);
+const { data: inventoryBalances, refresh: refreshInventoryBalances } =
+  await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged, {
+    immediate: canLoadInventoryBalances.value,
+  });
+const warehouses = computed(() => {
+  const uniqueWarehouses = new Map<number, any>();
+
+  (warehouseOptions.value || []).forEach((warehouse) => {
+    if (warehouse?.id) uniqueWarehouses.set(warehouse.id, warehouse);
+  });
+  (purchaseOrders.value || []).forEach((order) => {
+    if (order.warehouse?.id) {
+      uniqueWarehouses.set(order.warehouse.id, order.warehouse);
+    }
+  });
+
+  return Array.from(uniqueWarehouses.values());
+});
 
 const triggerRestock = async () => {
   if (!canTriggerRestock.value || isTriggeringRestock.value) return;
@@ -1629,19 +1669,26 @@ const handleCompleteOrder = async (id: number) => {
   openActionId.value = null;
   if (isDetailPopupOpen.value) closeDetailPopup();
   await refreshOrders();
-  await refreshInventoryBalances();
+  if (canLoadInventoryBalances.value) {
+    await refreshInventoryBalances();
+  }
 };
 
-const handleDeleteOrder = async (id: number) => {
+const handleDeleteOrder = async (order: PurchaseOrder) => {
+  const isDraft = order.status === "DRAFT";
   const isConfirm = await confirmDelete(
-    "Bạn có chắc chắn muốn hủy đơn nhập hàng này?",
+    isDraft
+      ? "Bạn có chắc chắn muốn xóa đơn nhập hàng nháp này?"
+      : "Bạn có chắc chắn muốn hủy đơn nhập hàng này?",
   );
   if (!isConfirm) return;
 
   const { error: deleteError } = await useAPI(
-    API_ENDPOINTS.purchaseOrders.cancel(id),
+    isDraft
+      ? API_ENDPOINTS.purchaseOrders.detail(order.id)
+      : API_ENDPOINTS.purchaseOrders.cancel(order.id),
     {
-      method: "PUT",
+      method: isDraft ? "DELETE" : "PUT",
     },
   );
 
@@ -1649,12 +1696,18 @@ const handleDeleteOrder = async (id: number) => {
     const backEndMsg =
       deleteError.value.data?.title ||
       deleteError.value.data?.message ||
-      "Không thể hủy đơn nhập hàng";
+      isDraft
+        ? "Không thể xóa đơn nhập hàng nháp"
+        : "Không thể hủy đơn nhập hàng";
     toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
     return;
   }
 
-  toast.fromMessage("Hủy đơn nhập hàng thành công!");
+  toast.fromMessage(
+    isDraft
+      ? "Xóa đơn nhập hàng nháp thành công!"
+      : "Hủy đơn nhập hàng thành công!",
+  );
   openActionId.value = null;
   if (isDetailPopupOpen.value) closeDetailPopup();
   await refreshOrders();

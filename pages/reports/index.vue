@@ -255,13 +255,13 @@ interface DashboardResponse {
 const toast = useToast();
 const config = useRuntimeConfig();
 const { syncFromStorage, token } = useAuthToken();
-const { createRoleChecker, financeRoles, getUserRoles } =
+const { createRoleChecker, getUserRoles, reportRoles } =
   useRoutePermissions();
 
 const { data: account } = await useAPI<Account>(API_ENDPOINTS.account.me);
 const roles = computed(() => getUserRoles(account.value));
 const hasAnyRole = createRoleChecker(roles);
-const canViewReport = computed(() => hasAnyRole(financeRoles));
+const canViewReport = computed(() => hasAnyRole(reportRoles));
 
 const { data: warehousesData } = await useAPI<Warehouse[]>(
   API_ENDPOINTS.warehouses.listSorted,

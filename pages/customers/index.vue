@@ -128,7 +128,10 @@
                                   Chỉnh sửa
                                 </a>
                               </div>
-                              <div class="imt-action delete-action">
+                              <div
+                                v-if="canDeleteCustomers"
+                                class="imt-action delete-action"
+                              >
                                 <a
                                   href="javascript:;"
                                   @click="handleDeleteCustomer(customer.id)"
@@ -328,6 +331,12 @@ const formData = ref<CustomerForm>({ ...defaultForm });
 const { data: customers, refresh: refreshCustomers } = await useAPI<
   Customer[]
 >(API_ENDPOINTS.customers.listSorted);
+const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
+const { adminManagerRoles, createRoleChecker, getUserRoles } =
+  useRoutePermissions();
+const userRoles = computed(() => getUserRoles(account.value));
+const hasAnyRole = createRoleChecker(userRoles);
+const canDeleteCustomers = computed(() => hasAnyRole(adminManagerRoles));
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -452,6 +461,8 @@ const handleSubmitCustomer = async () => {
 };
 
 const handleDeleteCustomer = async (id: number) => {
+  if (!canDeleteCustomers.value) return;
+
   const isConfirm = await confirmDelete(
     "Bạn có chắc chắn muốn xóa khách hàng này?",
   );

@@ -212,9 +212,28 @@
                               </div>
                               <div
                                 v-if="
+                                  order.status === 'DRAFT' &&
+                                  canDeleteTransferOrder
+                                "
+                                class="imt-action delete-action"
+                              >
+                                <a
+                                  href="javascript:;"
+                                  @click="handleDeleteTransferOrder(order.id)"
+                                >
+                                  <span class="icon">
+                                    <img
+                                      src="/img-fix/icon/icon-delete-popup.svg"
+                                      alt=""
+                                    />
+                                  </span>
+                                  Xóa đơn nháp
+                                </a>
+                              </div>
+                              <div
+                                v-if="
                                   canCancelTransferOrder &&
-                                  (order.status === 'DRAFT' ||
-                                    order.status === 'APPROVED' ||
+                                  (order.status === 'APPROVED' ||
                                     order.status === 'PROCESSING')
                                 "
                                 class="imt-action delete-action"
@@ -538,21 +557,20 @@ const { data: transferOrders, refresh: refreshTransferOrders } = await useAPI<
   TransferOrder[]
 >(API_ENDPOINTS.transferOrders.listEager);
 const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
-const { data: warehousesData } = await useAPI<SimpleRef[]>(
-  API_ENDPOINTS.warehouses.listSorted,
-);
-const { data: productsData } = await useAPI<SimpleRef[]>(
-  API_ENDPOINTS.products.listSorted,
-);
-
-const warehouses = computed(() => warehousesData.value || []);
-const products = computed(() => productsData.value || []);
-const { createRoleChecker, getActionRoles, getUserRoles } =
+const {
+  adminManagerRoles,
+  createRoleChecker,
+  getActionRoles,
+  getUserRoles,
+} =
   useRoutePermissions();
 const userRoles = computed(() => getUserRoles(account.value));
 const hasAnyRole = createRoleChecker(userRoles);
 const canCreateTransferOrder = computed(() =>
   hasAnyRole(getActionRoles("transferOrders.create")),
+);
+const canDeleteTransferOrder = computed(() =>
+  hasAnyRole(getActionRoles("transferOrders.delete")),
 );
 const canApproveTransferOrder = computed(() =>
   hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
@@ -566,6 +584,74 @@ const canCompleteTransferOrder = computed(() =>
 const canCancelTransferOrder = computed(() =>
   hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER"]),
 );
+const canLoadWarehouses = computed(() => hasAnyRole(adminManagerRoles));
+const canLoadInventoryBalances = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALE"]),
+);
+
+const { data: inventoryBalances, refresh: refreshInventoryBalances } =
+  await useAPI<any[]>(API_ENDPOINTS.inventoryBalances.listPaged, {
+    immediate: canLoadInventoryBalances.value,
+  });
+
+const { data: warehousesData } = await useAPI<SimpleRef[]>(
+  API_ENDPOINTS.warehouses.listSorted,
+  {
+    immediate: canLoadWarehouses.value,
+  },
+);
+const { data: productsData } = await useAPI<SimpleRef[]>(
+  API_ENDPOINTS.products.listSorted,
+  {
+    immediate: canCreateTransferOrder.value,
+  },
+);
+const warehouses = computed(() => {
+  const uniqueWarehouses = new Map<number, SimpleRef>();
+
+  (warehousesData.value || []).forEach((warehouse) => {
+    if (warehouse?.id) uniqueWarehouses.set(warehouse.id, warehouse);
+  });
+  (transferOrders.value || []).forEach((order) => {
+    if (order.fromWarehouse?.id) {
+      uniqueWarehouses.set(order.fromWarehouse.id, order.fromWarehouse);
+    }
+    if (order.toWarehouse?.id) {
+      uniqueWarehouses.set(order.toWarehouse.id, order.toWarehouse);
+    }
+  });
+
+  return Array.from(uniqueWarehouses.values());
+});
+const products = computed(() => productsData.value || []);
+
+const inventoryByProductId = computed(() => {
+  const map = new Map<number, any>();
+  const warehouseId = Number(formData.value.fromWarehouseId);
+
+  (inventoryBalances.value || []).forEach((balance) => {
+    if (
+      balance.product?.id &&
+      (!warehouseId || !balance.warehouse?.id || balance.warehouse.id === warehouseId)
+    ) {
+      map.set(balance.product.id, balance);
+    }
+  });
+
+  return map;
+});
+
+const getQuantityOnHand = (productId: number | string) => {
+  if (!productId) return 0;
+  return inventoryByProductId.value.get(Number(productId))?.quantity || 0;
+};
+
+const getProductCode = (productId: number | string) => {
+  if (!productId) return "";
+  const product = products.value.find((item) => Number(item.id) === Number(productId));
+  return product?.sku || "";
+};
+
 const normalizeText = (value: unknown) =>
   String(value || "")
     .trim()
@@ -669,6 +755,14 @@ const handleSubmitTransferOrder = async () => {
     return;
   }
 
+  for (const line of validLines) {
+    const available = getQuantityOnHand(line.productId);
+    if (Number(line.quantity) > available) {
+      toast.fromMessage(`Sản phẩm mã ${getProductCode(line.productId)} không đủ hàng trong kho xuất! (Tồn: ${available})`);
+      return;
+    }
+  }
+
   isSubmitting.value = true;
   const payload = {
     transferCode: formData.value.transferCode.trim(),
@@ -698,6 +792,9 @@ const handleSubmitTransferOrder = async () => {
   toast.fromMessage("Tạo đơn điều chuyển thành công!");
   closePopup();
   await refreshTransferOrders();
+  if (canLoadInventoryBalances.value) {
+    await refreshInventoryBalances();
+  }
 };
 
 const handleWorkflow = async (id: number, action: string) => {
@@ -715,6 +812,9 @@ const handleWorkflow = async (id: number, action: string) => {
   toast.fromMessage("Cập nhật trạng thái đơn thành công!");
   openActionId.value = null;
   await refreshTransferOrders();
+  if (canLoadInventoryBalances.value) {
+    await refreshInventoryBalances();
+  }
 };
 
 const handleDeleteTransferOrder = async (id: number) => {

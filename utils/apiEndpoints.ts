@@ -45,10 +45,10 @@ export const API_ENDPOINTS = {
   },
   inventoryBalances: {
     list: "/inventory-balances",
-    listPaged: "/inventory-balances?size=1000",
+    listPaged: "/inventory-balances?size=1000&eagerload=true",
   },
   inventoryTransactions: {
-    list: "/inventory-transactions",
+    list: "/inventory-transactions?size=1000&eagerload=true&sort=createdDate,desc",
     byProduct: (productId: number | string) =>
       `/inventory-transactions?productId.equals=${productId}&size=1000&sort=createdDate,desc`,
   },
@@ -82,6 +82,7 @@ export const API_ENDPOINTS = {
   },
   salesOrders: {
     list: "/sales-orders",
+    listEager: "/sales-orders?size=1000&eagerload=true&sort=id,desc",
     detail: (id: number | string) => `/sales-orders/${id}`,
     approve: (id: number | string) => `/sales-orders/${id}/approve`,
     cancel: (id: number | string) => `/sales-orders/${id}/cancel`,

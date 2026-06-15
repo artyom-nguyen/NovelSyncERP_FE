@@ -43,7 +43,7 @@
                 <input
                   type="text"
                   v-model="searchQuery"
-                  placeholder="Tìm mã, tên, nhóm sản phẩm..."
+                  placeholder="Tìm mã, tên, nhóm sản phẩm, kho..."
                 />
               </div>
             </div>
@@ -66,10 +66,16 @@
                     <div class="imt-title-table">
                       <p class="txt-title-table">Nhóm sản phẩm</p>
                     </div>
+                    <div class="imt-title-table">
+                      <p class="txt-title-table">Kho</p>
+                    </div>
                     <div class="imt-title-table justify-content-end">
                       <p class="txt-title-table">Tồn kho</p>
                     </div>
-                    <div class="imt-title-table imt-btn-table">
+                    <div
+                      v-if="canViewInventoryTransactions"
+                      class="imt-title-table imt-btn-table"
+                    >
                       <p class="txt-title-table"></p>
                     </div>
                   </div>
@@ -143,6 +149,17 @@
 
                         <div class="imt-content-table">
                           <div class="ct-dots-6">
+                            <div class="txt-wth-dots blue">
+                              <div class="custom-status-dot"></div>
+                              <p class="txt-m-content-table">
+                                {{ item.warehouse?.name || "---" }}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="imt-content-table">
+                          <div class="ct-dots-6">
                             <div
                               class="txt-wth-dots"
                               :class="
@@ -157,7 +174,10 @@
                           </div>
                         </div>
 
-                        <div class="imt-content-table imt-btn-table">
+                        <div
+                          v-if="canViewInventoryTransactions"
+                          class="imt-content-table imt-btn-table"
+                        >
                           <div v-if="item.product" class="flex-action-crm">
                             <div class="imt-action-crm">
                               <div
@@ -178,7 +198,7 @@
                                 <div class="imt-action">
                                   <a
                                     href="javascript:;"
-                                    @click="openHistoryPopup(item.product)"
+                                    @click="openHistoryPopup(item)"
                                   >
                                     <span class="icon">
                                       <img
@@ -227,6 +247,9 @@
                   <span class="font-weight-bold">
                     {{ selectedProduct?.name || "---" }}
                   </span>
+                  <span v-if="selectedWarehouse" class="opacity-6">
+                    - {{ selectedWarehouse.name || "Kho chưa xác định" }}
+                  </span>
                 </p>
               </div>
               <div class="right">
@@ -247,6 +270,9 @@
                   </div>
                   <div class="imt-title-table">
                     <p class="txt-title-table">Chứng từ</p>
+                  </div>
+                  <div class="imt-title-table">
+                    <p class="txt-title-table">Kho</p>
                   </div>
                   <div class="imt-title-table justify-content-end">
                     <p class="txt-title-table">Số lượng</p>
@@ -300,6 +326,11 @@
                       <div class="imt-content-table">
                         <p class="txt-content-table">
                           {{ formatReference(txn) }}
+                        </p>
+                      </div>
+                      <div class="imt-content-table">
+                        <p class="txt-content-table">
+                          {{ txn.warehouse?.name || "---" }}
                         </p>
                       </div>
                       <div class="imt-content-table justify-content-end">
@@ -359,10 +390,16 @@ interface Product {
   category: Category | null;
 }
 
+interface Warehouse {
+  id: number;
+  name: string | null;
+}
+
 interface InventoryBalance {
   id: number;
   quantity: number;
   product: Product | null;
+  warehouse: Warehouse | null;
 }
 
 interface InventoryTransaction {
@@ -372,6 +409,7 @@ interface InventoryTransaction {
   referenceId: number | null;
   createdDate: string | null;
   product: Product | null;
+  warehouse: Warehouse | null;
 }
 
 const balances = ref<InventoryBalance[]>([]);
@@ -398,8 +436,20 @@ const filterFields = [
 
 const isHistoryPopupOpen = ref(false);
 const selectedProduct = ref<Product | null>(null);
+const selectedWarehouse = ref<Warehouse | null>(null);
 const transactions = ref<InventoryTransaction[]>([]);
 const pendingTransaction = ref(false);
+const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
+const {
+  createRoleChecker,
+  getUserRoles,
+  inventoryTransactionRoles,
+} = useRoutePermissions();
+const userRoles = computed(() => getUserRoles(account.value));
+const hasAnyRole = createRoleChecker(userRoles);
+const canViewInventoryTransactions = computed(() =>
+  hasAnyRole(inventoryTransactionRoles),
+);
 
 const toggleActionMenu = (id: number) => {
   openActionId.value = openActionId.value === id ? null : id;
@@ -469,6 +519,8 @@ const filteredBalances = computed(() => {
       product?.name,
       formatProductAttributes(product),
       product?.category?.name,
+      item.warehouse?.id,
+      item.warehouse?.name,
     ]
       .map(normalizeText)
       .join(" ");
@@ -481,20 +533,24 @@ const filteredBalances = computed(() => {
   });
 });
 
-const openHistoryPopup = async (product: Product) => {
-  if (!product.id) {
+const openHistoryPopup = async (balance: InventoryBalance) => {
+  if (!canViewInventoryTransactions.value) return;
+
+  const product = balance.product;
+  if (!product?.id) {
     toast.fromMessage("Không tìm thấy thông tin sản phẩm để xem thẻ kho.");
     return;
   }
 
   selectedProduct.value = product;
+  selectedWarehouse.value = balance.warehouse;
   isHistoryPopupOpen.value = true;
   pendingTransaction.value = true;
   transactions.value = [];
   openActionId.value = null;
 
   const { data, error } = await useAPI<InventoryTransaction[]>(
-    API_ENDPOINTS.inventoryTransactions.byProduct(product.id),
+    API_ENDPOINTS.inventoryTransactions.list,
   );
 
   if (error.value) {
@@ -504,13 +560,20 @@ const openHistoryPopup = async (product: Product) => {
     return;
   }
 
-  transactions.value = data.value || [];
+  transactions.value = (data.value || []).filter((transaction) => {
+    const matchesProduct = transaction.product?.id === product.id;
+    const matchesWarehouse =
+      !balance.warehouse?.id || transaction.warehouse?.id === balance.warehouse.id;
+
+    return matchesProduct && matchesWarehouse;
+  });
   pendingTransaction.value = false;
 };
 
 const closeHistoryPopup = () => {
   isHistoryPopupOpen.value = false;
   selectedProduct.value = null;
+  selectedWarehouse.value = null;
   transactions.value = [];
 };
 

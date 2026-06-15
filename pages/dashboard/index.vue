@@ -572,16 +572,20 @@ const currentYear = ref(today.getFullYear());
 const { data: account } = await useAPI<Account>(API_ENDPOINTS.account.me);
 const {
   adminManagerRoles,
-  catalogRoles,
+  categoryRoles,
   createRoleChecker,
+  customerRoles,
   financeRoles,
   formatRole,
   getActionRoles,
   getUserRoles,
-  inventoryRoles,
+  inventoryBalanceRoles,
+  inventoryTransactionRoles,
+  productRoles,
   purchaseRoles,
   reportRoles,
   salesRoles,
+  supplierRoles,
   transferRoles,
 } = useRoutePermissions();
 
@@ -589,24 +593,26 @@ const roles = computed(() => getUserRoles(account.value));
 const hasAnyRole = createRoleChecker(roles);
 const adminOnlyRoles = getActionRoles("admin.users");
 
-const canLoadCatalogData = computed(() => hasAnyRole(catalogRoles));
+const canLoadProductData = computed(() => hasAnyRole(productRoles));
+const canLoadCategoryData = computed(() => hasAnyRole(categoryRoles));
+const canLoadSupplierData = computed(() => hasAnyRole(supplierRoles));
 const canLoadSalesData = computed(() => hasAnyRole(salesRoles));
 const canLoadPurchaseData = computed(() => hasAnyRole(purchaseRoles));
-const canLoadInventoryData = computed(() => hasAnyRole(inventoryRoles));
+const canLoadInventoryData = computed(() => hasAnyRole(inventoryBalanceRoles));
 
 const { data: products, refresh: refreshProducts } = await useAPI<Product[]>(
   API_ENDPOINTS.products.listSorted,
-  { immediate: canLoadCatalogData.value || canLoadInventoryData.value },
+  { immediate: canLoadProductData.value },
 );
 const { data: categories, refresh: refreshCategories } = await useAPI<
   Category[]
 >(API_ENDPOINTS.categories.list, {
-  immediate: canLoadCatalogData.value,
+  immediate: canLoadCategoryData.value,
 });
 const { data: suppliers, refresh: refreshSuppliers } = await useAPI<Supplier[]>(
   API_ENDPOINTS.suppliers.list,
   {
-    immediate: canLoadCatalogData.value,
+    immediate: canLoadSupplierData.value,
   },
 );
 const { data: purchaseOrders, refresh: refreshPurchaseOrders } = await useAPI<
@@ -640,7 +646,9 @@ const canCreateSalesDraft = computed(() =>
 const canCreatePurchaseDraft = computed(() =>
   hasAnyRole(getActionRoles("purchaseOrders.create")),
 );
-const canCreateTransferDraft = computed(() => hasAnyRole(transferRoles));
+const canCreateTransferDraft = computed(() =>
+  hasAnyRole(getActionRoles("transferOrders.create")),
+);
 const canApproveOrders = computed(() =>
   hasAnyRole(getActionRoles("salesOrders.approve")),
 );
@@ -648,7 +656,7 @@ const canCompleteSalesPurchase = computed(() =>
   hasAnyRole(getActionRoles("purchaseOrders.complete")),
 );
 const canCancelOrders = computed(() => hasAnyRole(adminOnlyRoles));
-const canViewInventoryWork = computed(() => hasAnyRole(inventoryRoles));
+const canViewInventoryWork = computed(() => hasAnyRole(inventoryBalanceRoles));
 
 const fullName = computed(() => {
   const name =
@@ -752,11 +760,11 @@ const quickActions = [
 ];
 
 const quickActionRoleMap: Record<string, string[]> = {
-  "/products": catalogRoles,
+  "/products": productRoles,
   "/sales-orders": salesRoles,
   "/purchase-orders": purchaseRoles,
-  "/inventory-balances": inventoryRoles,
-  "/suppliers": catalogRoles,
+  "/inventory-balances": inventoryBalanceRoles,
+  "/suppliers": supplierRoles,
   "/users": adminOnlyRoles,
   "/reports": reportRoles,
 };
@@ -781,7 +789,7 @@ const moduleCards: ModuleCard[] = [
     route: "/customers",
     icon: "/img-fix/icon/icon-user-add-blue.svg",
     colorClass: "mdl-linear-blue-2",
-    roles: salesRoles,
+    roles: customerRoles,
   },
   {
     title: "Đơn nhập hàng",
@@ -813,7 +821,7 @@ const moduleCards: ModuleCard[] = [
     route: "/inventory-balances",
     icon: "/img-fix/icon/icon-storage-blue.svg",
     colorClass: "mdl-linear-green",
-    roles: inventoryRoles,
+    roles: inventoryBalanceRoles,
   },
   {
     title: "Giao dịch tồn kho",
@@ -821,7 +829,7 @@ const moduleCards: ModuleCard[] = [
     route: "/inventory-transactions",
     icon: "/img-fix/icon/icon-square-dot.svg",
     colorClass: "mdl-linear-green-2",
-    roles: inventoryRoles,
+    roles: inventoryTransactionRoles,
   },
   {
     title: "Sản phẩm",
@@ -829,7 +837,7 @@ const moduleCards: ModuleCard[] = [
     route: "/products",
     icon: "/img-fix/icon/icon-storefront.svg",
     colorClass: "mdl-linear-green-2",
-    roles: catalogRoles,
+    roles: productRoles,
   },
   {
     title: "Nhóm sản phẩm",
@@ -837,7 +845,7 @@ const moduleCards: ModuleCard[] = [
     route: "/product-categories",
     icon: "/img-fix/icon/icon-tag-new-white.svg",
     colorClass: "mdl-linear-orange",
-    roles: catalogRoles,
+    roles: categoryRoles,
   },
   {
     title: "Nhà cung cấp",
@@ -845,7 +853,7 @@ const moduleCards: ModuleCard[] = [
     route: "/suppliers",
     icon: "/img-fix/icon/icon-bold-buildingoffice-white.svg",
     colorClass: "mdl-linear-blue-2",
-    roles: catalogRoles,
+    roles: supplierRoles,
   },
   {
     title: "Thanh toán",
@@ -1165,11 +1173,14 @@ const isToday = (day: number | null) => {
 const refreshDashboard = async () => {
   const refreshTasks: Promise<unknown>[] = [];
 
-  if (canLoadCatalogData.value || canLoadInventoryData.value) {
+  if (canLoadProductData.value) {
     refreshTasks.push(refreshProducts());
   }
-  if (canLoadCatalogData.value) {
-    refreshTasks.push(refreshCategories(), refreshSuppliers());
+  if (canLoadCategoryData.value) {
+    refreshTasks.push(refreshCategories());
+  }
+  if (canLoadSupplierData.value) {
+    refreshTasks.push(refreshSuppliers());
   }
   if (canLoadPurchaseData.value) {
     refreshTasks.push(refreshPurchaseOrders());

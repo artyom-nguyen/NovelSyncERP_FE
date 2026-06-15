@@ -22,12 +22,41 @@ export const roleLabels: Record<string, string> = {
 export const fallbackAuthorityNames = Object.keys(roleLabels);
 
 export const permissionRoleGroups = {
-  sales: ["ROLE_ADMIN", "ROLE_SALES", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
-  purchase: ["ROLE_ADMIN", "ROLE_PURCHASER", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
+  sales: [
+    "ROLE_ADMIN",
+    "ROLE_MANAGER",
+    "ROLE_SHIPPER",
+    "ROLE_SALES",
+    "ROLE_WAREHOUSE",
+    "ROLE_ACCOUNTANT",
+  ],
+  customers: ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALES"],
+  purchase: [
+    "ROLE_ADMIN",
+    "ROLE_MANAGER",
+    "ROLE_SHIPPER",
+    "ROLE_PURCHASER",
+    "ROLE_WAREHOUSE",
+    "ROLE_ACCOUNTANT",
+  ],
   transfer: ["ROLE_ADMIN", "ROLE_WAREHOUSE", "ROLE_MANAGER", "ROLE_SHIPPER"],
-  inventory: ["ROLE_ADMIN", "ROLE_WAREHOUSE", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
-  catalog: ["ROLE_ADMIN", "ROLE_PURCHASER", "ROLE_WAREHOUSE", "ROLE_MANAGER"],
-  finance: ["ROLE_ADMIN", "ROLE_ACCOUNTANT"],
+  inventoryBalances: ["ROLE_ADMIN", "ROLE_SALES", "ROLE_WAREHOUSE", "ROLE_MANAGER"],
+  inventoryTransactions: [
+    "ROLE_ADMIN",
+    "ROLE_MANAGER",
+    "ROLE_WAREHOUSE",
+    "ROLE_ACCOUNTANT",
+  ],
+  products: [
+    "ROLE_ADMIN",
+    "ROLE_SALES",
+    "ROLE_PURCHASER",
+    "ROLE_WAREHOUSE",
+    "ROLE_MANAGER",
+  ],
+  categories: ["ROLE_ADMIN", "ROLE_MANAGER"],
+  suppliers: ["ROLE_ADMIN", "ROLE_PURCHASER", "ROLE_MANAGER"],
+  payments: ["ROLE_ADMIN", "ROLE_SHIPPER", "ROLE_ACCOUNTANT"],
   reports: ["ROLE_ADMIN", "ROLE_ACCOUNTANT"],
   adminManager: ["ROLE_ADMIN", "ROLE_MANAGER"],
   adminOnly: ["ROLE_ADMIN"],
@@ -35,47 +64,56 @@ export const permissionRoleGroups = {
 
 export type PermissionAction =
   | "salesOrders.create"
+  | "salesOrders.delete"
   | "salesOrders.approve"
   | "salesOrders.delivery"
   | "salesOrders.payment"
   | "salesOrders.cancel"
   | "purchaseOrders.create"
+  | "purchaseOrders.delete"
   | "purchaseOrders.approve"
   | "purchaseOrders.delivery"
   | "purchaseOrders.complete"
   | "purchaseOrders.cancel"
   | "transferOrders.create"
+  | "transferOrders.delete"
   | "payments.approve"
   | "admin.users";
 
 export const permissionActions: Record<PermissionAction, string[]> = {
-  "salesOrders.create": ["ROLE_ADMIN", "ROLE_SALES"],
+  "salesOrders.create": ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALES"],
+  "salesOrders.delete": ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALES"],
   "salesOrders.approve": ["ROLE_ADMIN", "ROLE_MANAGER"],
   "salesOrders.delivery": ["ROLE_ADMIN", "ROLE_SHIPPER"],
   "salesOrders.payment": ["ROLE_ADMIN", "ROLE_SHIPPER", "ROLE_ACCOUNTANT"],
-  "salesOrders.cancel": ["ROLE_ADMIN", "ROLE_MANAGER"],
-  "purchaseOrders.create": ["ROLE_ADMIN", "ROLE_PURCHASER"],
+  "salesOrders.cancel": ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
+  "purchaseOrders.create": ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_PURCHASER"],
+  "purchaseOrders.delete": ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_PURCHASER"],
   "purchaseOrders.approve": ["ROLE_ADMIN", "ROLE_MANAGER"],
   "purchaseOrders.delivery": ["ROLE_ADMIN", "ROLE_SHIPPER"],
   "purchaseOrders.complete": ["ROLE_ADMIN", "ROLE_ACCOUNTANT"],
-  "purchaseOrders.cancel": ["ROLE_ADMIN", "ROLE_MANAGER"],
-  "transferOrders.create": permissionRoleGroups.transfer,
-  "payments.approve": permissionRoleGroups.finance,
+  "purchaseOrders.cancel": ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_ACCOUNTANT"],
+  "transferOrders.create": ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_WAREHOUSE"],
+  "transferOrders.delete": ["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_WAREHOUSE"],
+  "payments.approve": ["ROLE_ADMIN", "ROLE_ACCOUNTANT"],
   "admin.users": permissionRoleGroups.adminOnly,
 };
 
 const routeAccessRules: RouteAccessRule[] = [
   { path: "/sales-orders", roles: permissionRoleGroups.sales },
-  { path: "/customers", roles: permissionRoleGroups.sales },
+  { path: "/customers", roles: permissionRoleGroups.customers },
   { path: "/purchase-orders", roles: permissionRoleGroups.purchase },
   { path: "/transfer-orders", roles: permissionRoleGroups.transfer },
   { path: "/warehouses", roles: permissionRoleGroups.adminManager },
-  { path: "/inventory-balances", roles: permissionRoleGroups.inventory },
-  { path: "/inventory-transactions", roles: permissionRoleGroups.inventory },
-  { path: "/products", roles: permissionRoleGroups.catalog },
-  { path: "/product-categories", roles: permissionRoleGroups.catalog },
-  { path: "/suppliers", roles: permissionRoleGroups.catalog },
-  { path: "/payments", roles: permissionRoleGroups.finance },
+  { path: "/inventory-balances", roles: permissionRoleGroups.inventoryBalances },
+  {
+    path: "/inventory-transactions",
+    roles: permissionRoleGroups.inventoryTransactions,
+  },
+  { path: "/products", roles: permissionRoleGroups.products },
+  { path: "/product-categories", roles: permissionRoleGroups.categories },
+  { path: "/suppliers", roles: permissionRoleGroups.suppliers },
+  { path: "/payments", roles: permissionRoleGroups.payments },
   { path: "/reports", roles: permissionRoleGroups.reports },
   { path: "/users", roles: permissionRoleGroups.adminOnly },
   { path: "/employees", roles: permissionRoleGroups.adminManager },
@@ -150,25 +188,36 @@ export const useRoutePermissions = () => {
   return {
     adminManagerRoles: permissionRoleGroups.adminManager,
     canAccessPath,
-    catalogRoles: permissionRoleGroups.catalog,
+    catalogRoles: permissionRoleGroups.products,
+    categoryRoles: permissionRoleGroups.categories,
     createRoleChecker,
+    customerRoles: permissionRoleGroups.customers,
     fallbackAuthorityNames,
-    financeRoles: permissionRoleGroups.finance,
+    financeRoles: permissionRoleGroups.payments,
     reportRoles: permissionRoleGroups.reports,
     formatRole,
     getActionRoles,
     getRouteAccessRule,
     getUserRoles,
     hasAnyRole,
-    inventoryRoles: permissionRoleGroups.inventory,
+    inventoryBalanceRoles: permissionRoleGroups.inventoryBalances,
+    inventoryRoles: [
+      ...new Set([
+        ...permissionRoleGroups.inventoryBalances,
+        ...permissionRoleGroups.inventoryTransactions,
+      ]),
+    ],
+    inventoryTransactionRoles: permissionRoleGroups.inventoryTransactions,
     isAuthenticatedOpenRoute,
     isPublicRoute,
     permissionActions,
     permissionRoleGroups,
     purchaseRoles: permissionRoleGroups.purchase,
+    productRoles: permissionRoleGroups.products,
     routeAccessRules,
     roleLabels,
     salesRoles: permissionRoleGroups.sales,
+    supplierRoles: permissionRoleGroups.suppliers,
     transferRoles: permissionRoleGroups.transfer,
   };
 };

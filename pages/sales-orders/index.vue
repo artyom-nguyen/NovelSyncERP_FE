@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="top-layout-site">
     <div class="main-layout-site">
       <div class="block-lead-view">
@@ -266,7 +266,7 @@
                               >
                                 <a
                                   href="javascript:;"
-                                  @click="handleDeleteOrder(so.id)"
+                                  @click="handleDeleteOrder(so)"
                                 >
                                   <span class="icon"
                                     ><img
@@ -1388,13 +1388,14 @@ const yearOptions = computed(() => {
 });
 
 const { data: salesOrders, refresh: refreshOrders } =
-  await useAPI<SalesOrder[]>(API_ENDPOINTS.salesOrders.list);
+  await useAPI<SalesOrder[]>(API_ENDPOINTS.salesOrders.listEager);
 const { data: account } = await useAPI<any>(API_ENDPOINTS.account.me);
-const { data: products } = await useAPI<Product[]>(
-  API_ENDPOINTS.products.listSorted,
-);
-const { data: warehouses } = await useAPI<any[]>(API_ENDPOINTS.warehouses.list);
-const { createRoleChecker, getActionRoles, getUserRoles } =
+const {
+  adminManagerRoles,
+  createRoleChecker,
+  getActionRoles,
+  getUserRoles,
+} =
   useRoutePermissions();
 
 const userRoles = computed(() => getUserRoles(account.value));
@@ -1402,6 +1403,9 @@ const hasAnyRole = createRoleChecker(userRoles);
 
 const canCreateSalesOrder = computed(() =>
   hasAnyRole(getActionRoles("salesOrders.create")),
+);
+const canDeleteSalesOrder = computed(() =>
+  hasAnyRole(getActionRoles("salesOrders.delete")),
 );
 const canApproveSalesOrder = computed(() =>
   hasAnyRole(getActionRoles("salesOrders.approve")),
@@ -1416,9 +1420,47 @@ const canCancelSalesOrder = computed(() =>
   hasAnyRole(getActionRoles("salesOrders.cancel")),
 );
 const canSimulateCampaign = computed(() => hasAnyRole(["ROLE_ADMIN"]));
+const canLoadWarehouses = computed(() => hasAnyRole(adminManagerRoles));
 const canCancelSalesOrderStatus = (status: string) =>
-  canCancelSalesOrder.value &&
-  ["DRAFT", "APPROVED", "PROCESSING"].includes(status);
+  (status === "DRAFT" && canDeleteSalesOrder.value) ||
+  (["APPROVED", "PROCESSING"].includes(status) &&
+    canCancelSalesOrder.value);
+
+const { data: products } = await useAPI<Product[]>(
+  API_ENDPOINTS.products.listSorted,
+  {
+    immediate: canCreateSalesOrder.value || canSimulateCampaign.value,
+  },
+);
+const { data: warehouseOptions } = await useAPI<any[]>(
+  API_ENDPOINTS.warehouses.list,
+  {
+    immediate: canLoadWarehouses.value,
+  },
+);
+
+const canLoadInventoryBalances = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALE"]),
+);
+const { data: inventoryBalances, refresh: refreshInventoryBalances } =
+  await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged, {
+    immediate: canLoadInventoryBalances.value,
+  });
+
+const warehouses = computed(() => {
+  const uniqueWarehouses = new Map<number, any>();
+
+  (warehouseOptions.value || []).forEach((warehouse) => {
+    if (warehouse?.id) uniqueWarehouses.set(warehouse.id, warehouse);
+  });
+  (salesOrders.value || []).forEach((order) => {
+    if (order.warehouse?.id) {
+      uniqueWarehouses.set(order.warehouse.id, order.warehouse);
+    }
+  });
+
+  return Array.from(uniqueWarehouses.values());
+});
 
 const openCampaignPopup = () => {
   campaignResult.value = null;
@@ -1704,9 +1746,30 @@ const currentUserName = computed(() => {
   );
 });
 
+const inventoryByProductId = computed(() => {
+  const map = new Map<number, InventoryBalance>();
+  const warehouseId = Number(formData.value.warehouseId);
+
+  (inventoryBalances.value || []).forEach((balance) => {
+    if (
+      balance.product?.id &&
+      (!warehouseId || !balance.warehouse?.id || balance.warehouse.id === warehouseId)
+    ) {
+      map.set(balance.product.id, balance);
+    }
+  });
+
+  return map;
+});
+
+const getQuantityOnHand = (productId: number | string) => {
+  if (!productId) return 0;
+  return inventoryByProductId.value.get(Number(productId))?.quantity || 0;
+};
+
 const filteredProducts = computed(() => products.value || []);
 
-const getProductCode = (productId: number | "") => {
+const getProductCode = (productId: number | string) => {
   if (!productId) return "";
   const product = products.value?.find((item) => item.id === Number(productId));
   return product?.sku || "";
@@ -1793,6 +1856,15 @@ const submitOrder = async () => {
     toast.fromMessage("Vui lòng chọn ít nhất 1 sản phẩm hợp lệ!");
     return;
   }
+
+  for (const item of validItems) {
+    const available = getQuantityOnHand(item.productId);
+    if (Number(item.quantity) > available) {
+      toast.fromMessage(`Sản phẩm mã ${getProductCode(item.productId)} không đủ hàng trong kho xuất! (Tồn: ${available})`);
+      return;
+    }
+  }
+
   isSubmitting.value = true;
   const partnerInfo = normalizePartnerInfo({
     name: formData.value.partnerName,
@@ -1863,6 +1935,9 @@ const submitOrder = async () => {
     toast.fromMessage("Tạo đơn bán hàng nháp thành công!");
     closeCreatePopup();
     await refreshOrders();
+    if (canLoadInventoryBalances.value) {
+      await refreshInventoryBalances();
+    }
   } catch (err: any) {
     const msg =
       err.data?.title ||
@@ -1934,10 +2009,13 @@ const handleApproveOrder = async (id: number) => {
     return;
   }
 
-  toast.fromMessage("Duyệt xuất đơn hàng thành công!");
+  toast.fromMessage("Duyệt đơn bán hàng thành công!");
   openActionId.value = null;
   if (isDetailPopupOpen.value) closeDetailPopup();
   await refreshOrders();
+  if (canLoadInventoryBalances.value) {
+    await refreshInventoryBalances();
+  }
 };
 
 const handleStartDelivery = async (id: number) => {
@@ -2018,26 +2096,40 @@ const handleCreateVnPayUrl = async (id: number) => {
   openActionId.value = null;
 };
 
-const handleDeleteOrder = async (id: number) => {
+const handleDeleteOrder = async (order: SalesOrder) => {
+  const isDraft = order.status === "DRAFT";
   const isConfirm = await confirmDelete(
-    "Bạn có chắc chắn muốn hủy đơn hàng này?",
+    isDraft
+      ? "Bạn có chắc chắn muốn xóa đơn bán hàng nháp này?"
+      : "Bạn có chắc chắn muốn hủy đơn hàng này?",
   );
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(API_ENDPOINTS.salesOrders.cancel(id), {
-    method: "PUT",
-  });
+  const { error: deleteError } = await useAPI(
+    isDraft
+      ? API_ENDPOINTS.salesOrders.detail(order.id)
+      : API_ENDPOINTS.salesOrders.cancel(order.id),
+    {
+      method: isDraft ? "DELETE" : "PUT",
+    },
+  );
 
   if (deleteError.value) {
     const backEndMsg =
       deleteError.value.data?.title ||
       deleteError.value.data?.message ||
-      "Không thể hủy đơn hàng";
+      isDraft
+        ? "Không thể xóa đơn bán hàng nháp"
+        : "Không thể hủy đơn hàng";
     toast.fromMessage(`Lỗi từ máy chủ: ${backEndMsg}`);
     return;
   }
 
-  toast.fromMessage("Hủy đơn hàng thành công!");
+  toast.fromMessage(
+    isDraft
+      ? "Xóa đơn bán hàng nháp thành công!"
+      : "Hủy đơn hàng thành công!",
+  );
   openActionId.value = null;
   if (isDetailPopupOpen.value) closeDetailPopup();
   await refreshOrders();

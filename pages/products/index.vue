@@ -83,10 +83,16 @@
                     <div class="imt-title-table">
                       <p class="txt-title-table">Giá bán</p>
                     </div>
-                    <div class="imt-title-table">
+                    <div
+                      v-if="canViewInventoryBalances"
+                      class="imt-title-table"
+                    >
                       <p class="txt-title-table">Tồn kho</p>
                     </div>
-                    <div class="imt-title-table">
+                    <div
+                      v-if="canViewInventoryBalances"
+                      class="imt-title-table"
+                    >
                       <p class="txt-title-table">Trạng thái kho</p>
                     </div>
                     <div v-if="canManageProducts" class="imt-title-table imt-btn-table">
@@ -141,7 +147,10 @@
                         </p>
                       </div>
 
-                      <div class="imt-content-table">
+                      <div
+                        v-if="canViewInventoryBalances"
+                        class="imt-content-table"
+                      >
                         <div class="ct-dots-6">
                           <p class="txt-m-content-table">
                             {{ getQuantityOnHand(product.id).toLocaleString("vi-VN") }}
@@ -150,7 +159,10 @@
                         </div>
                       </div>
 
-                      <div class="imt-content-table">
+                      <div
+                        v-if="canViewInventoryBalances"
+                        class="imt-content-table"
+                      >
                         <div class="ct-dots-6">
                           <div
                             class="txt-wth-dots"
@@ -330,7 +342,7 @@
                       <select v-model="formData.categoryId">
                         <option value="" disabled>Lựa chọn</option>
                         <option
-                          v-for="cat in categoriesData"
+                          v-for="cat in categories"
                           :key="cat.id"
                           :value="cat.id"
                         >
@@ -449,6 +461,9 @@ const { adminManagerRoles, createRoleChecker, getUserRoles } =
 const userRoles = computed(() => getUserRoles(account.value));
 const hasAnyRole = createRoleChecker(userRoles);
 const canManageProducts = computed(() => hasAnyRole(adminManagerRoles));
+const canViewInventoryBalances = computed(() =>
+  hasAnyRole(["ROLE_ADMIN", "ROLE_SALES", "ROLE_WAREHOUSE", "ROLE_MANAGER"]),
+);
 
 const defaultForm: ProductFormPayload = {
   id: undefined,
@@ -464,31 +479,54 @@ const formData = ref<ProductFormPayload>({ ...defaultForm });
 const { data: products, refresh: refreshProducts } =
   await useAPI<Product[]>(API_ENDPOINTS.products.listSorted);
 const { data: inventoryBalances, refresh: refreshInventoryBalances } =
-  await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged);
+  await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged, {
+    immediate: canViewInventoryBalances.value,
+  });
 const { data: categoriesData } = await useAPI<Category[]>(
   API_ENDPOINTS.categories.listSorted,
+  {
+    immediate: canManageProducts.value,
+  },
 );
+const categories = computed(() => {
+  const uniqueCategories = new Map<number, Category>();
+
+  (categoriesData.value || []).forEach((category) => {
+    uniqueCategories.set(category.id, category);
+  });
+  (products.value || []).forEach((product) => {
+    if (product.category?.id) {
+      uniqueCategories.set(product.category.id, product.category);
+    }
+  });
+
+  return Array.from(uniqueCategories.values());
+});
 
 const filterFields = computed(() => [
   {
     key: "categoryId",
     label: "Nhóm sản phẩm",
     type: "select" as const,
-    options: (categoriesData.value || []).map((category) => ({
+    options: categories.value.map((category) => ({
       label: category.name,
       value: category.id,
     })),
   },
-  {
-    key: "stockStatus",
-    label: "Tồn kho",
-    type: "select" as const,
-    options: [
-      { label: "Còn hàng", value: "IN_STOCK" },
-      { label: "Sắp hết", value: "LOW_STOCK" },
-      { label: "Hết hàng", value: "OUT_OF_STOCK" },
-    ],
-  },
+  ...(canViewInventoryBalances.value
+    ? [
+        {
+          key: "stockStatus",
+          label: "Tồn kho",
+          type: "select" as const,
+          options: [
+            { label: "Còn hàng", value: "IN_STOCK" },
+            { label: "Sắp hết", value: "LOW_STOCK" },
+            { label: "Hết hàng", value: "OUT_OF_STOCK" },
+          ],
+        },
+      ]
+    : []),
 ]);
 
 const inventoryByProductId = computed(() => {
@@ -564,7 +602,9 @@ const openFilterPopup = (event?: MouseEvent) => {
 
 const refreshProductList = async () => {
   await refreshProducts();
-  await refreshInventoryBalances();
+  if (canViewInventoryBalances.value) {
+    await refreshInventoryBalances();
+  }
 };
 
 const filteredProducts = computed(() => {
@@ -668,7 +708,7 @@ const handleSubmitProduct = async () => {
 
   isSubmitting.value = true;
 
-  const selectedCategory = categoriesData.value?.find(
+  const selectedCategory = categories.value.find(
     (category) => category.id === Number(formData.value.categoryId),
   );
 

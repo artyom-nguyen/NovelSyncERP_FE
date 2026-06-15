@@ -69,6 +69,9 @@
                     <div class="imt-title-table table-cell-right">
                       <p class="txt-title-table">Số lượng</p>
                     </div>
+                    <div class="imt-title-table table-cell-right">
+                      <p class="txt-title-table">Đơn giá</p>
+                    </div>
                     <div class="imt-title-table">
                       <p class="txt-title-table">ID sản phẩm</p>
                     </div>
@@ -152,6 +155,12 @@
                         >
                           {{ getQuantityPrefix(transaction.type)
                           }}{{ transaction.quantity.toLocaleString("vi-VN") }}
+                        </p>
+                      </div>
+
+                      <div class="imt-content-table table-cell-right">
+                        <p class="txt-content-table">
+                          {{ formatCurrency(transaction.unitCost) }}
                         </p>
                       </div>
 
@@ -258,6 +267,7 @@ interface InventoryTransaction {
   id: number;
   type: "RECEIPT" | "ISSUE" | "TRANSFER_IN" | "TRANSFER_OUT" | string;
   quantity: number;
+  unitCost: number | null;
   referenceId: number | null;
   createdDate: string;
   product: Product | null;
@@ -365,6 +375,7 @@ const filteredTransactions = computed(() => {
       transaction.id,
       transaction.type,
       transaction.quantity,
+      transaction.unitCost,
       transaction.referenceId,
       formatReference(transaction),
       transaction.product?.id,
@@ -418,6 +429,9 @@ const formatDateTime = (dateStr: string | null | undefined) => {
     minute: "2-digit",
   }).format(date);
 };
+
+const formatCurrency = (value: number | null | undefined) =>
+  Number(value || 0).toLocaleString("vi-VN");
 
 const formatTransactionType = (type: string | null | undefined) => {
   if (type === "RECEIPT") return "Nhập kho";
