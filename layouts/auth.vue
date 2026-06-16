@@ -28,7 +28,6 @@
           <div class="bg-popup-page"></div>
         </div>
         <slot></slot>
-
         <div class="footer-login-page">
           <div class="container">
             <div class="layout-footer-login-page">

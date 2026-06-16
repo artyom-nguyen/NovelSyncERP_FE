@@ -40,7 +40,7 @@
                 @click="loadReport"
               >
                 <p class="text-size-13-medium">
-                  {{ isLoadingReport ? "Đang tải..." : "Xem báo cáo" }}
+                  {{ isLoadingReport ? "Đang tải..." : "Load lại dữ liệu" }}
                 </p>
               </button>
             </div>
@@ -197,11 +197,11 @@
                     </div>
                   </div>
                   <button
-                    class="btn-frame-color"
+                    class="btn-bg-dark"
                     :disabled="isExportingReport"
                     @click="exportReport"
                   >
-                    <p class="text-size-13-medium">
+                    <p class="text">
                       {{ isExportingReport ? "Đang xuất..." : "Xuất Excel" }}
                     </p>
                   </button>
@@ -611,3 +611,4 @@ onMounted(() => {
   }
 }
 </style>
+

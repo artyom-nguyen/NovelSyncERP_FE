@@ -1,15 +1,4 @@
-function OpenMenuMb() {
-  $(".wp-menu-mb-js").addClass("open-menu-mb");
-  $(".bg-menu-js").addClass("active");
-  $("html,body").addClass("overflow-body");
-}
-
-function RemoveMenuMb() {
-  $(".wp-menu-mb-js").removeClass("open-menu-mb");
-  $(".bg-menu-js").removeClass("active");
-  $("html,body").removeClass("overflow-body");
-}
-$(document).ready(function () {
+﻿$(document).ready(function () {
   $(document).off("click.iconDotsRow", ".icon-dots-row");
   $(document).on("click.iconDotsRow", ".icon-dots-row", function (e) {
     e.preventDefault();
@@ -133,82 +122,18 @@ $(document).ready(function () {
       }
     },
   );
-  //   function normalizeChatText($el) {
-  //   let text = $el.text();
 
-  //   // bỏ dòng trống đầu & cuối do HTML format
-  //   text = text.replace(/^\n+|\n+$/g, "");
-
-  //   // tách thành từng dòng
-  //   let lines = text.split("\n");
-
-  //   // tìm indent chung nhỏ nhất
-  //   let minIndent = Infinity;
-
-  //   $.each(lines, function (_, line) {
-  //     if ($.trim(line) === "") return;
-
-  //     const match = line.match(/^(\s+)/);
-  //     if (match) {
-  //       minIndent = Math.min(minIndent, match[1].length);
-  //     } else {
-  //       minIndent = 0;
-  //     }
-  //   });
-
-  //   // cắt indent chung
-  //   if (minIndent !== Infinity && minIndent > 0) {
-  //     lines = $.map(lines, function (line) {
-  //       return line.slice(minIndent);
-  //     });
-  //   }
-
-  //   // gán lại text sạch
-  //   $el.text(lines.join("\n"));
-  // }
-
-  $(document).ready(function () {
-    $(".txt-chat-message").each(function () {
-      normalizeChatText($(this));
-    });
-  });
-
-  // $("*")
-  //   .contents()
-  //   .filter(function () {
-  //     // Node type 3 là text node (văn bản thuần túy)
-  //     return this.nodeType === 3;
-  //   })
-  //   .each(function () {
-  //     // Trim trực tiếp giá trị của text node
-  //     this.nodeValue = this.nodeValue.trim();
-  //   });
   const $contentTable = $(".content-table");
   const $titleTable = $(".imt-title-table");
-  if ($contentTable.children().length == 0) {
+  if ($contentTable && $titleTable && $contentTable.children().length == 0) {
     $titleTable.css({
       "min-width": "auto",
       "max-width": "none",
     });
   }
-  $("#chats").click(function (e) {
-    e.preventDefault();
-    $(this).closest(".box-tree-chat--item").toggleClass("open-chat-child");
-  });
-  $("#btn-mention-box").click(function (e) {
-    e.preventDefault();
-    $(".main-mention-user").toggleClass("open-box");
-  });
-  $(".box-search-topbar").click(function () {
-    $(".box-popup-search-full").addClass("open-popup");
-    $("html,body").addClass("overflow-hidden");
-  });
-  $(".bg-popup-page").click(function () {
-    $(".box-popup-search-full").removeClass("open-popup");
-    $("html,body").removeClass("overflow-hidden");
-  });
-  $(".wth-tooltip")
-    .on("mouseenter", function () {
+
+  $(document)
+    .on("mouseenter", ".wth-tooltip", function () {
       const $tooltip = $(this).find(".topbar-tooltip");
 
       const tooltipEle = $tooltip[0];
@@ -221,7 +146,6 @@ $(document).ready(function () {
           const overflow = $el.css("overflow");
           const overflowX = $el.css("overflow-x");
           const overflowY = $el.css("overflow-y");
-          console.log($el);
           return (
             (overflow && overflow !== "visible") ||
             (overflowX && overflowX !== "visible") ||
@@ -270,421 +194,22 @@ $(document).ready(function () {
           top: newTop + "px",
           visibility: "visible",
           opacity: "1",
-          // position: "fixed",
         });
       }
     })
-    .on("mouseleave", function () {
+    .on("mouseleave", ".wth-tooltip", function () {
       const $tooltip = $(this).find(".topbar-tooltip");
 
       if ($tooltip) {
         $tooltip.css({
           visibility: "hidden",
           opacity: "0",
-          // display: "none",
         });
       }
     });
 
-  // $(".btn-nv-dhs")
-  //   .on("mouseenter", function () {
-  //     const $tooltip = $(this).find(".topbar-tooltip");
-  //     const tooltipEle = $tooltip[0];
-  //     const tableElement = $(this).closest(".group-table-web")[0];
-  //     const btnElement = this;
-  //     if (!tooltipEle || !tableElement) {
-  //       $tooltip.css({
-  //         visibility: "visible",
-  //         opacity: "1",
-  //         display: "block",
-  //       });
-  //     } else {
-  //       $tooltip.css({
-  //         display: "block",
-  //         visibility: "hidden",
-  //         opacity: "0",
-  //       });
-  //       const toolTipPos = tooltipEle.getBoundingClientRect();
-  //       const tablePos = tableElement.getBoundingClientRect();
-  //       const btnPos = btnElement.getBoundingClientRect();
-  //       let newLeft = btnPos.left;
-  //       let newTop = btnPos.top - btnPos.height - 5;
-
-  //       if (newLeft + toolTipPos.width > tablePos.right) {
-  //         newLeft = btnPos.right - toolTipPos.width;
-  //       }
-
-  //       $tooltip.css({
-  //         left: newLeft + "px",
-  //         top: newTop + "px",
-  //         visibility: "visible",
-  //         opacity: "1",
-  //         position: "fixed",
-  //       });
-  //     }
-  //   })
-  //   .on("mouseleave", function () {
-  //     const $tooltip = $(this).find(".topbar-tooltip");
-
-  //     if ($tooltip) {
-  //       $tooltip.css({
-  //         visibility: "hidden",
-  //         opacity: "0",
-  //         // display: "none",
-  //       });
-  //     }
-  //   });
-
-  // $(".btn-frame-colors")
-  //   .on("mouseenter", function () {
-  //     const $tooltip = $(this).find(".topbar-tooltip");
-  //     const tooltipEle = $tooltip[0];
-  //     const sliceView = $(this).closest(".block-main-chat")[0];
-  //     const btnElement = this;
-  //     if (!tooltipEle || !sliceView) {
-  //       $tooltip.css({
-  //         visibility: "visible",
-  //         opacity: "1",
-  //         display: "block",
-  //       });
-  //     } else {
-  //       $tooltip.css({
-  //         display: "block",
-  //         visibility: "hidden",
-  //         opacity: "0",
-  //       });
-  //       const toolTipPos = tooltipEle.getBoundingClientRect();
-  //       const slicePos = sliceView.getBoundingClientRect();
-  //       const btnPos = btnElement.getBoundingClientRect();
-  //       let newLeft = btnPos.left;
-  //       let newTop = btnPos.top - btnPos.height - 5;
-
-  //       if (newLeft + toolTipPos.width > slicePos.right) {
-  //         newLeft = btnPos.right - toolTipPos.width;
-  //       }
-
-  //       $tooltip.css({
-  //         left: newLeft + "px",
-  //         top: newTop + "px",
-  //         visibility: "visible",
-  //         opacity: "1",
-  //         position: "fixed",
-  //       });
-  //     }
-  //   })
-  //   .on("mouseleave", function () {
-  //     const $tooltip = $(this).find(".topbar-tooltip");
-
-  //     if ($tooltip) {
-  //       $tooltip.css({
-  //         visibility: "hidden",
-  //         opacity: "0",
-  //         // display: "none",
-  //       });
-  //     }
-  //   });
-  // $(".icon-item-utilitys")
-  //   .on("mouseenter", function () {
-  //     const $tooltip = $(this).find(".topbar-tooltip");
-  //     const tooltipEle = $tooltip[0];
-  //     const sliceView = $(this).closest(".block-main-chat")[0];
-  //     const btnElement = this;
-  //     if (!tooltipEle || !sliceView) {
-  //       $tooltip.css({
-  //         visibility: "visible",
-  //         opacity: "1",
-  //         display: "block",
-  //       });
-  //     } else {
-  //       $tooltip.css({
-  //         display: "block",
-  //         visibility: "hidden",
-  //         opacity: "0",
-  //       });
-  //       const toolTipPos = tooltipEle.getBoundingClientRect();
-  //       const slicePos = sliceView.getBoundingClientRect();
-  //       const btnPos = btnElement.getBoundingClientRect();
-  //       let newLeft = btnPos.left;
-  //       let newTop = btnPos.top - btnPos.height - 5;
-
-  //       if (newLeft + toolTipPos.width > slicePos.right) {
-  //         newLeft = btnPos.right - toolTipPos.width;
-  //       }
-
-  //       $tooltip.css({
-  //         left: newLeft + "px",
-  //         top: newTop + "px",
-  //         visibility: "visible",
-  //         opacity: "1",
-  //         position: "fixed",
-  //       });
-  //     }
-  //   })
-  //   .on("mouseleave", function () {
-  //     const $tooltip = $(this).find(".topbar-tooltip");
-
-  //     if ($tooltip) {
-  //       $tooltip.css({
-  //         visibility: "hidden",
-  //         opacity: "0",
-  //         // display: "none",
-  //       });
-  //     }
-  //   });
-
-  // $(".icon-item-utilitys,.btn-square-layouts")
-  //   .on("mouseenter", function () {
-  //     const $tooltip = $(this).find(".topbar-tooltip");
-  //     const tooltipEle = $tooltip[0];
-  //     const sliceElement = $(this).closest(".main-layout-site")[0];
-  //     const btnElement = this;
-  //     if (!tooltipEle || !sliceElement) {
-  //       $tooltip.css({
-  //         visibility: "visible",
-  //         opacity: "1",
-  //         display: "block",
-  //       });
-  //     } else {
-  //       $tooltip.css({
-  //         display: "block",
-  //         visibility: "hidden",
-  //         opacity: "0",
-  //       });
-  //       const toolTipPos = tooltipEle.getBoundingClientRect();
-  //       const slicePos = sliceElement.getBoundingClientRect();
-  //       const btnPos = btnElement.getBoundingClientRect();
-  //       let newTop = btnPos.top - btnPos.height - 5;
-  //       let newLeft = btnPos.left;
-
-  //       if (newTop < slicePos.top) {
-  //         newTop = btnPos.top - btnPos.height;
-  //       }
-
-  //       $tooltip.css({
-  //         left: newLeft + "px",
-  //         top: newTop + "px",
-  //         visibility: "visible",
-  //         opacity: "1",
-  //         position: "fixed",
-  //       });
-  //     }
-  //   })
-  //   .on("mouseleave", function () {
-  //     const $tooltip = $(this).find(".topbar-tooltip");
-
-  //     if ($tooltip) {
-  //       $tooltip.css({
-  //         visibility: "hidden",
-  //         opacity: "0",
-  //         // display: "none",
-  //       });
-  //     }
-  //   });
-  $('[data-toggle="tooltip"]').tooltip();
-  // Click mở popup
-  $(".topbar-sidebar-collapse .icon-collapse").click(function () {
-    var w = window.innerWidth;
-    if (w > 1300) {
-      $(".block-kh-page").toggleClass("open-wide");
-    }
-  });
-  $(".user-login").click(function () {
-    $(".block-user").toggleClass("open-box-user");
-  });
-  $("body").click(function (e) {
-    var eventTarget = e.target;
-    var listenClick = ".block-user";
-    if ($(eventTarget).parents(listenClick).length != 1) {
-      $(".block-user").removeClass("open-box-user");
-    }
-  });
-  // Click menu mobile
-  $(".icon-nav-sidebar-mb").click(function () {
-    $(".main-sidebar-left").addClass("open-sidebar");
-    $(".bg-sidebar-left").addClass("open-bg");
-    $("body").addClass("overflow-hidden");
-  });
-  $(".close-popup-sidebar,.bg-sidebar-left").click(function () {
-    $(".main-sidebar-left").removeClass("open-sidebar");
-    $(".bg-sidebar-left").removeClass("open-bg");
-    $("body").removeClass("overflow-hidden");
-  });
-
-  $(".block-nav-menu-bt").click(function () {
-    $(".wrap").toggleClass("compact-sidebar");
-  });
-  // Ckick tab thông báo
-  $(".item-support-topbar").click(function () {
-    $(".item-support-topbar").removeClass("active");
-    $(this).addClass("active");
-  });
-  $("body").click(function (e) {
-    var eventTarget = e.target;
-    var listenClick = ".lst-call-noti";
-    if ($(eventTarget).parents(listenClick).length != 1) {
-      $(".item-support-topbar").removeClass("active");
-    }
-  });
-  // Click box user menu
-  $(".flex-user").click(function () {
-    $(".box-user-login").toggleClass("open-box");
-  });
-  $(".status-user").click(function () {
-    $(".box-user-login").toggleClass("open-box");
-  });
-  $("body").click(function (e) {
-    var eventTarget = e.target;
-    var listenClick = ".box-user-login";
-    if ($(eventTarget).parents(listenClick).length != 1) {
-      $(".box-user-login").removeClass("open-box");
-    }
-  });
-  // Sscroll fixed add class
-  $(window).scroll(function (event) {
-    offsetAdd = $(window).scrollTop();
-    if (offsetAdd > 10) {
-      $(".topbar-fixed").addClass("scroll-page");
-    } else {
-      $(".topbar-fixed").removeClass("scroll-page");
-    }
-  });
-  $(window).scroll(function (event) {
-    if (offsetAdd > 10) {
-      $(".menu-topbar-mobile").addClass("scroll");
-    } else {
-      $(".menu-topbar-mobile").removeClass("scroll");
-    }
-  });
-
-  // Click box bộ lọc
-  $(".box-filter-search").click(function () {
-    $(".box-popup-filter-search").addClass("open-box-filter");
-  });
-  $(".icon-close-box").click(function () {
-    $(".box-popup-filter-search ").removeClass("open-box-filter");
-  });
-  $("body").click(function (e) {
-    var eventTarget = e.target;
-    var listenClick = ".filter-search";
-    if ($(eventTarget).parents(listenClick).length != 1) {
-      $(".box-popup-filter-search ").removeClass("open-box-filter");
-    }
-  });
-  // Click box bộ lọc
-  $(".box-filter-search").click(function () {
-    $(".box-popup-filter-search").addClass("open-box-filter");
-  });
-  $(".box-popup-filter-search .icon-close-box").click(function () {
-    $(".box-popup-filter-search ").removeClass("open-box-filter");
-  });
-  $("body").click(function (e) {
-    var eventTarget = e.target;
-    var listenClick = ".filter-search";
-    if ($(eventTarget).parents(listenClick).length != 1) {
-      $(".box-popup-filter-search ").removeClass("open-box-filter");
-    }
-  });
-  // Click box sắp xếp
-  $(".title-box-ss-column").click(function () {
-    $(".box-popup-ss-column").addClass("open-box-ss");
-  });
-  $(".box-popup-ss-column .icon-close-box").click(function () {
-    $(".box-popup-ss-column").removeClass("open-box-ss");
-  });
-  $("body").click(function (e) {
-    var eventTarget = e.target;
-    var listenClick = ".box-ss-column";
-    if ($(eventTarget).parents(listenClick).length != 1) {
-      $(".box-popup-ss-column").removeClass("open-box-ss");
-    }
-  });
-
-  // Click tab
-  $(".box-info-hs-crm .title-box .arrow").click(function () {
-    $(this).parents(".box-info-hs-crm").toggleClass("active");
-  });
-
-  // Click sidebar Hồ sơ
-  $(".box-mobile-menu-sidebar").click(function (e) {
-    $("body").addClass("overflow-hidden");
-    $(".sidebar-hs-new").addClass("open-sidebar-hs");
-    $(".navigation-sidebar").addClass("open-sidebar-hs");
-    $(".sidebar-bc.course-create").addClass("side-wth-popup");
-
-    $(".sidebar-contract").addClass("side-wth-popup");
-  });
-  $(".close-popup-sidebar-hs").click(function (e) {
-    $("body").removeClass("overflow-hidden");
-    $(".sidebar-hs-new").removeClass("open-sidebar-hs");
-    $(".navigation-sidebar").removeClass("open-sidebar-hs");
-    $(".sidebar-bc.course-create").removeClass("side-wth-popup");
-    $(".sidebar-contract").removeClass("side-wth-popup");
-  });
-  // CLick sidebar hồ sơ 2025
-  $(".box-mobile-menu-sidebar").click(function (e) {
-    $("body").addClass("overflow-hidden");
-    $(".sidebar-box-dp").addClass("open-sidebar");
-  });
-  $(".close-popup-sidebar-hs").click(function (e) {
-    $("body").removeClass("overflow-hidden");
-    $(".sidebar-box-dp").removeClass("open-sidebar");
-  });
-
-  $(".sidebar-mb--btn").click(function (e) {
-    $("body").addClass("overflow-hidden");
-    $(".sidebar-gn").addClass("open-sidebar");
-  });
-  $(".close-popup-sidebar").click(function (e) {
-    $("body").removeClass("overflow-hidden");
-    $(".sidebar-gn").removeClass("open-sidebar");
-  });
-
-  // Click sidebar
-  $(".icon-sidebar").click(function (e) {
-    $(".sidebar-site").addClass("open-sidebar");
-    $("body").addClass("overflow-hidden");
-  });
-
-  $(".close-popup-sidebar,.bg-sidebar").click(function (e) {
-    $(".sidebar-site").removeClass("open-sidebar");
-    $("body").removeClass("overflow-hidden");
-  });
-
-  // Click icon question
-
-  $(".back-sidebar").click(function () {
-    $(".wp-site-2025").toggleClass("compact-sidebar");
-  });
-});
-function toggleMenu(el) {
-  // Ẩn tất cả menu khác trước
-  document.querySelectorAll(".finance-2025-action-menu").forEach((menu) => {
-    if (menu !== el.querySelector(".finance-2025-action-menu")) {
-      menu.classList.remove("active");
-    }
-  });
-
-  // Toggle menu hiện tại
-  const menu = el.querySelector(".finance-2025-action-menu");
-  menu.classList.toggle("active");
-}
-
-// Ẩn menu khi click ra ngoài
-document.addEventListener("click", function (e) {
-  if (!e.target.closest(".finance-2025-dots")) {
-    document.querySelectorAll(".finance-2025-action-menu").forEach((menu) => {
-      menu.classList.remove("active");
-    });
+  if (typeof $.fn.tooltip === "function") {
+    $('[data-toggle="tooltip"]').tooltip();
   }
-  $(document).on(
-    "click",
-    ".item-nav-group-child .nav-parent .icon-illus, .item-nav-group-child .nav-parent .icon",
-    function (e) {
-      e.preventDefault();
-      e.stopPropagation();
 
-      const $group = $(this).closest(".item-nav-group-child");
-      $group.toggleClass("open-nav-child");
-    },
-  );
 });

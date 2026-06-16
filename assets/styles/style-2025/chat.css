@@ -1,59 +1,36 @@
 
-
-
-
-
-
-
 .flex-col-20row {
   display: flex;
   flex-direction: column;
   row-gap: 20px;
 }
-
-
-
-
-
 .popup-export-file.new {
   opacity: 0;
   visibility: hidden;
 }
-
 .popup-export-file.new.active {
   display: block;
 }
-
 .flex-row-5col.fade-away {
   display: none;
 }
-
 @media (max-width: 1279px) {
-
-  
 }
-
 @media (max-width: 991px) {
-
   .container.container-w-max .flex-bottom-layout-site {
     flex-direction: row;
     padding: 5px 0px;
   }
 }
-
-
-
 @media (max-width: 576px) {
   .container.container-w-max .flex-bottom-layout-site {
     flex-direction: column;
     padding: 5px 0px;
   }
-
   .container.container-w-max .flex-bottom-layout-site p {
     font-size: 13px;
   }
 }
-
 
 .text-box {
   max-width: 570px;

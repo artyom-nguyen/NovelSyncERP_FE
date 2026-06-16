@@ -79,7 +79,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 
-
 definePageMeta({
   layout: "auth",
 });
@@ -92,7 +91,6 @@ const confirmPassword = ref("");
 const errorMsg = ref("");
 const isSubmitting = ref(false);
 const isSuccess = ref(false);
-
 
 onMounted(() => {
   if (route.query.key) {
@@ -151,7 +149,6 @@ const handleResetPassword = async () => {
       return;
     }
 
-    
     isSuccess.value = true;
   } catch (err) {
     errorMsg.value = "Không thể kết nối đến máy chủ.";

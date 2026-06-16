@@ -41,16 +41,6 @@
                 <a
                   href="javascript:;"
                   class="icon-item-utility wth-tooltip"
-                  @click="openExportPopup"
-                >
-                  <img src="/img-fix/icon/icon-download-black.svg" alt="" />
-                  <span class="topbar-tooltip">Xuất báo cáo</span>
-                </a>
-              </div>
-              <div class="item-utility-topbar">
-                <a
-                  href="javascript:;"
-                  class="icon-item-utility wth-tooltip"
                   @click="() => refreshOrders()"
                 >
                   <img src="/img-fix/icon/icon-topbar-reload.svg" alt="" />
@@ -314,99 +304,6 @@
       title="Bộ lọc danh sách"
       :fields="filterFields"
     />
-
-    <Teleport to="body">
-      <div
-        v-if="isExportPopupOpen"
-        class="popup-export-file ct-popup-width-540 new-popup-common open-popup overlay-fixed"
-      >
-        <div class="content-export-file">
-          <div class="main-export-file">
-            <div class="title-export-file align-items-center">
-              <div class="left">
-                <p class="text-size-14-medium">
-                  Xuất báo cáo sản phẩm bán chạy
-                </p>
-              </div>
-              <div class="right">
-                <div class="icon-close-small" @click="closeExportPopup">
-                  <img src="/img-fix/icon/icon-close.svg" alt="" />
-                </div>
-              </div>
-            </div>
-            <div class="main-popup-content">
-              <div class="form-popup-grid export-report-grid">
-                <div class="imt-popup-form">
-                  <p class="txt-ct-input">
-                    Tháng <span class="important-text">*</span>
-                  </p>
-                  <div class="ct-form-select">
-                    <select v-model.number="exportForm.month">
-                      <option
-                        v-for="month in monthOptions"
-                        :key="month"
-                        :value="month"
-                      >
-                        Tháng {{ month }}
-                      </option>
-                    </select>
-                    <span class="icon-select">
-                      <img src="/img-fix/icon/icon-arrow-down-new.svg" alt="" />
-                    </span>
-                  </div>
-                </div>
-                <div class="imt-popup-form">
-                  <p class="txt-ct-input">
-                    Năm <span class="important-text">*</span>
-                  </p>
-                  <div class="ct-form-select">
-                    <select v-model.number="exportForm.year">
-                      <option
-                        v-for="year in yearOptions"
-                        :key="year"
-                        :value="year"
-                      >
-                        {{ year }}
-                      </option>
-                    </select>
-                    <span class="icon-select">
-                      <img src="/img-fix/icon/icon-arrow-down-new.svg" alt="" />
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <p class="text-size-13-light opacity-6 mt-10">
-                File Excel gồm các cột: Mã sản phẩm, Tên sản phẩm, Tổng SL bán,
-                Tổng doanh thu.
-              </p>
-            </div>
-            <div class="button-popup-content">
-              <div class="btn-create-group">
-                <a
-                  href="javascript:;"
-                  class="btn-frame-color imt-border"
-                  @click="closeExportPopup"
-                >
-                  <p class="text-size-13-rgl">Hủy</p>
-                </a>
-              </div>
-              <div class="btn-create-group">
-                <a
-                  href="javascript:;"
-                  class="btn-frame-color primary"
-                  @click="exportTopSellingProducts"
-                >
-                  <p class="text-size-13-rgl">
-                    {{ isExporting ? "Đang xuất..." : "Xuất Excel" }}
-                  </p>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="bg-popup-page" @click="closeExportPopup"></div>
-      </div>
-    </Teleport>
 
     <Teleport to="body">
       <div
@@ -1289,7 +1186,7 @@ interface CampaignSimulationResult {
 const openActionId = ref<number | null>(null);
 const isCreatePopupOpen = ref(false);
 const isDetailPopupOpen = ref(false);
-const isExportPopupOpen = ref(false);
+
 const isCampaignPopupOpen = ref(false);
 const isSubmitting = ref(false);
 const isExporting = ref(false);
@@ -1369,10 +1266,7 @@ const getSalesOrderStatusTextClass = (status: string | null | undefined) =>
 
 const currentDate = new Date();
 const monthOptions = Array.from({ length: 12 }, (_, index) => index + 1);
-const exportForm = ref({
-  month: currentDate.getMonth() + 1,
-  year: currentDate.getFullYear(),
-});
+
 const campaignForm = ref({
   productId: "" as number | string,
   warehouseId: "" as number | string,
@@ -1673,15 +1567,6 @@ const handlePartnerPhoneInput = (event: Event) => {
   formData.value.partnerPhone = phone;
 };
 
-const openExportPopup = () => {
-  isExportPopupOpen.value = true;
-};
-
-const closeExportPopup = () => {
-  if (isExporting.value) return;
-  isExportPopupOpen.value = false;
-};
-
 const normalizeBaseUrl = (baseUrl: string) =>
   baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
 
@@ -1729,13 +1614,6 @@ const getReportErrorMessage = async (response: Response) => {
   } catch {
     return "Không thể xuất file Excel.";
   }
-};
-
-const exportTopSellingProducts = async () => {
-  toast.fromMessage(
-    "Backend hiện chưa cung cấp API xuất báo cáo sản phẩm bán chạy.",
-  );
-  isExportPopupOpen.value = false;
 };
 
 const currentUserName = computed(() => {

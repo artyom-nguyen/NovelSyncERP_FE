@@ -44,12 +44,6 @@
                 </a>
               </div>
               <div class="item-utility-topbar">
-                <a href="javascript:;" class="icon-item-utility wth-tooltip">
-                  <img src="/img-fix/icon/icon-download-black.svg" alt="" />
-                  <span class="topbar-tooltip">Xuất báo cáo</span>
-                </a>
-              </div>
-              <div class="item-utility-topbar">
                 <a
                   href="javascript:;"
                   class="icon-item-utility wth-tooltip"
