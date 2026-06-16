@@ -11,7 +11,8 @@ export interface NotificationDTO {
   recipient?: any;
 }
 
-const NOTIFICATION_STORAGE_KEY = "novel_notifications";
+const LEGACY_NOTIFICATION_STORAGE_KEY = "novel_notifications";
+const NOTIFICATION_STORAGE_KEY_PREFIX = "novel_notifications";
 const USER_NOTIFICATION_DESTINATION = "/user/queue/notifications";
 
 export const useNotifications = () => {
@@ -26,6 +27,35 @@ export const useNotifications = () => {
   let notificationPollTimer: number | null = null;
   let stompClient: Client | null = null;
 
+  const getTokenSubject = (token: string) => {
+    if (!process.client) return "";
+
+    try {
+      const payload = token.split(".")[1];
+      if (!payload) return "";
+
+      const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const paddedBase64 = base64.padEnd(
+        Math.ceil(base64.length / 4) * 4,
+        "=",
+      );
+      const decoded = JSON.parse(window.atob(paddedBase64)) as {
+        sub?: string;
+      };
+
+      return decoded.sub || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const getStorageKey = () => {
+    if (!authToken.value) return "";
+
+    const tokenSubject = getTokenSubject(authToken.value);
+    const identity = tokenSubject || authToken.value.slice(-24);
+    return `${NOTIFICATION_STORAGE_KEY_PREFIX}:${encodeURIComponent(identity)}`;
+  };
 
   const unreadCount = computed(
     () => notifications.value.filter((n) => !n.isRead).length,
@@ -38,8 +68,11 @@ export const useNotifications = () => {
 
   const saveToLocal = (notifs: NotificationDTO[]) => {
     if (!process.client) return;
+    const storageKey = getStorageKey();
+    if (!storageKey) return;
+
     localStorage.setItem(
-      NOTIFICATION_STORAGE_KEY,
+      storageKey,
       JSON.stringify(notifs.slice(0, 30)),
     );
   };
@@ -88,7 +121,15 @@ export const useNotifications = () => {
   const loadAndMergeLocal = () => {
     if (!process.client) return;
 
-    const localData = localStorage.getItem(NOTIFICATION_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_NOTIFICATION_STORAGE_KEY);
+
+    const storageKey = getStorageKey();
+    if (!storageKey) {
+      notifications.value = [];
+      return;
+    }
+
+    const localData = localStorage.getItem(storageKey);
     const map = new Map<number, NotificationDTO>();
 
     if (localData) {
@@ -98,7 +139,7 @@ export const useNotifications = () => {
           map.set(notification.id, notification);
         });
       } catch {
-        localStorage.removeItem(NOTIFICATION_STORAGE_KEY);
+        localStorage.removeItem(storageKey);
       }
     }
 
@@ -130,7 +171,8 @@ export const useNotifications = () => {
         },
       );
 
-      mergeNotifications(data || []);
+      notifications.value = sortNotifications(data || []);
+      saveToLocal(notifications.value);
     } catch {
       // Notification refresh is background work; keep the current list if it fails.
     } finally {

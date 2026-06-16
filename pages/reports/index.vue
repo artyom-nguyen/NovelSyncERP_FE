@@ -129,7 +129,9 @@
                         <div class="trend-track">
                           <div
                             class="trend-bar revenue"
-                            :style="{ width: `${getTrendPercent(row.revenue)}%` }"
+                            :style="{
+                              width: `${getTrendPercent(row.revenue)}%`,
+                            }"
                           ></div>
                         </div>
                         <p>{{ formatShortCurrency(row.revenue) }}</p>
@@ -139,7 +141,9 @@
                         <div class="trend-track">
                           <div
                             class="trend-bar profit"
-                            :style="{ width: `${getTrendPercent(row.profit)}%` }"
+                            :style="{
+                              width: `${getTrendPercent(row.profit)}%`,
+                            }"
                           ></div>
                         </div>
                         <p>{{ formatShortCurrency(row.profit) }}</p>
@@ -154,9 +158,7 @@
 
               <div class="reports-section">
                 <div class="panel-head compact">
-                  <p class="text-size-13-medium">
-                    Top sản phẩm theo lợi nhuận
-                  </p>
+                  <p class="text-size-13-medium">Top sản phẩm theo lợi nhuận</p>
                 </div>
                 <div v-if="topProducts.length" class="reports-table">
                   <div class="reports-table-row head">
@@ -183,21 +185,33 @@
                 <div class="panel-head compact">
                   <p class="text-size-13-medium">Xuất báo cáo Excel</p>
                 </div>
-                <div class="reports-filter-row">
+                <div class="reports-filter-row export-filter-row">
                   <div class="reports-field">
                     <p class="txt-ct-input">Từ ngày</p>
-                    <div class="ct-form-input">
+                    <div class="ct-form-input date-input-with-icon">
                       <input v-model="exportFilters.startDate" type="date" />
+                      <span class="date-input-icon">
+                        <img
+                          src="/img-fix/icon/icon-calendar-bold.svg"
+                          alt=""
+                        />
+                      </span>
                     </div>
                   </div>
                   <div class="reports-field">
                     <p class="txt-ct-input">Đến ngày</p>
-                    <div class="ct-form-input">
+                    <div class="ct-form-input date-input-with-icon">
                       <input v-model="exportFilters.endDate" type="date" />
+                      <span class="date-input-icon">
+                        <img
+                          src="/img-fix/icon/icon-calendar-bold.svg"
+                          alt=""
+                        />
+                      </span>
                     </div>
                   </div>
                   <button
-                    class="btn-bg-dark"
+                    class="btn-bg-dark export-short-button"
                     :disabled="isExportingReport"
                     @click="exportReport"
                   >
@@ -255,8 +269,7 @@ interface DashboardResponse {
 const toast = useToast();
 const config = useRuntimeConfig();
 const { syncFromStorage, token } = useAuthToken();
-const { createRoleChecker, getUserRoles, reportRoles } =
-  useRoutePermissions();
+const { createRoleChecker, getUserRoles, reportRoles } = useRoutePermissions();
 
 const { data: account } = await useAPI<Account>(API_ENDPOINTS.account.me);
 const roles = computed(() => getUserRoles(account.value));
@@ -299,7 +312,7 @@ const authHeaders = (): Record<string, string> => {
   return headers;
 };
 
-const apiFetch = <T>(url: string, options: Record<string, unknown> = {}) =>
+const apiFetch = <T,>(url: string, options: Record<string, unknown> = {}) =>
   $fetch<T>(url, {
     baseURL: config.public.apiBase,
     ...options,
@@ -435,180 +448,4 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-.reports-page .main-tab {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.reports-heading {
-  text-align: right;
-}
-
-.reports-panel {
-  background: #fff;
-  border: 1px solid #edf0f5;
-  border-radius: 8px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.panel-head.compact {
-  align-items: flex-start;
-}
-
-.reports-filter-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
-  gap: 12px;
-  align-items: end;
-}
-
-.reports-field {
-  min-width: 0;
-}
-
-.reports-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.reports-metric {
-  border: 1px solid #edf0f5;
-  border-radius: 8px;
-  padding: 14px;
-  background: #f8fafc;
-}
-
-.reports-metric .title {
-  color: #667085;
-  font-size: 13px;
-  margin-bottom: 6px;
-}
-
-.reports-metric .number {
-  color: #0f172a;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.reports-section {
-  border-top: 1px solid #edf0f5;
-  padding-top: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.reports-trend-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.trend-row {
-  display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-}
-
-.trend-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #344054;
-}
-
-.trend-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.trend-line {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 92px;
-  gap: 8px;
-  align-items: center;
-  font-size: 12px;
-  color: #667085;
-}
-
-.trend-track {
-  height: 8px;
-  background: #edf2f7;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.trend-bar {
-  height: 100%;
-  border-radius: inherit;
-}
-
-.trend-bar.revenue {
-  background: #2563eb;
-}
-
-.trend-bar.profit {
-  background: #16a34a;
-}
-
-.reports-table {
-  border: 1px solid #edf0f5;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.reports-table-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 160px;
-  gap: 12px;
-  padding: 12px 14px;
-  border-top: 1px solid #edf0f5;
-  font-size: 13px;
-}
-
-.reports-table-row:first-child {
-  border-top: 0;
-}
-
-.reports-table-row.head {
-  background: #f8fafc;
-  font-weight: 700;
-  color: #344054;
-}
-
-.reports-empty {
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
-  padding: 16px;
-  color: #667085;
-  background: #f8fafc;
-}
-
-@media (max-width: 900px) {
-  .reports-filter-row,
-  .reports-summary,
-  .reports-table-row,
-  .trend-row {
-    grid-template-columns: 1fr;
-  }
-
-  .reports-heading {
-    text-align: left;
-  }
-}
-</style>
-
+<style scoped></style>
