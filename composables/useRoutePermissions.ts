@@ -132,7 +132,9 @@ const authenticatedOpenRoutes = ["/dashboard", "/work"];
 
 export const useRoutePermissions = () => {
   const normalizePath = (path: string) =>
-    path.length > 1 ? path.replace(/\/+$/, "") : path;
+    path.length > 1
+      ? path.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/"
+      : path;
 
   const isPathMatch = (path: string, basePath: string) => {
     const normalizedPath = normalizePath(path);
@@ -210,6 +212,7 @@ export const useRoutePermissions = () => {
     inventoryTransactionRoles: permissionRoleGroups.inventoryTransactions,
     isAuthenticatedOpenRoute,
     isPublicRoute,
+    normalizePath,
     permissionActions,
     permissionRoleGroups,
     purchaseRoles: permissionRoleGroups.purchase,

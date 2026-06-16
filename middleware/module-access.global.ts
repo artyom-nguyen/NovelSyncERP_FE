@@ -9,11 +9,24 @@ export default defineNuxtRouteMiddleware(async (to) => {
     getRouteAccessRule,
     getUserRoles,
     isPublicRoute,
+    normalizePath,
   } = useRoutePermissions();
   const { clearToken, syncFromStorage, token } = useAuthToken();
 
   if (process.client) {
     syncFromStorage();
+  }
+
+  const normalizedPath = normalizePath(to.path);
+  if (normalizedPath !== to.path) {
+    return navigateTo(
+      {
+        path: normalizedPath,
+        query: to.query,
+        hash: to.hash,
+      },
+      { replace: true },
+    );
   }
 
   if (isPublicRoute(to.path)) return;
