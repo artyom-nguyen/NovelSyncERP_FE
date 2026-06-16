@@ -1176,6 +1176,17 @@ interface Product {
   purchasePrice?: number;
 }
 
+interface InventoryBalance {
+  id: number;
+  quantity: number;
+  product: {
+    id: number;
+  } | null;
+  warehouse?: {
+    id: number;
+  } | null;
+}
+
 interface CampaignSimulationResult {
   predicted_sales?: number;
   expected_revenue?: number | string | null;
@@ -1565,55 +1576,6 @@ const handlePartnerPhoneInput = (event: Event) => {
   const phone = toDigitsOnly(target.value);
   target.value = phone;
   formData.value.partnerPhone = phone;
-};
-
-const normalizeBaseUrl = (baseUrl: string) =>
-  baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-
-const getReportDownloadUrl = () => {
-  const config = useRuntimeConfig();
-  const params = new URLSearchParams({
-    month: String(exportForm.value.month),
-    year: String(exportForm.value.year),
-  });
-
-  return `${normalizeBaseUrl(config.public.apiBase || "")}/reports/top-selling-products/download?${params.toString()}`;
-};
-
-const getFileNameFromResponse = (response: Response) => {
-  const disposition = response.headers.get("content-disposition");
-  const fallbackName = `top-selling-products-${exportForm.value.year}-${String(
-    exportForm.value.month,
-  ).padStart(2, "0")}.xlsx`;
-
-  if (!disposition) return fallbackName;
-
-  const utfFileName = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
-  if (utfFileName) return decodeURIComponent(utfFileName);
-
-  const fileName = disposition.match(/filename="?([^";]+)"?/i)?.[1];
-  return fileName || fallbackName;
-};
-
-const triggerBlobDownload = (blob: Blob, fileName: string) => {
-  const objectUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = objectUrl;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(objectUrl);
-};
-
-const getReportErrorMessage = async (response: Response) => {
-  try {
-    const data = await response.clone().json();
-    return data?.title || data?.message || "Không thể xuất file Excel.";
-  } catch {
-    return "Không thể xuất file Excel.";
-  }
 };
 
 const currentUserName = computed(() => {
