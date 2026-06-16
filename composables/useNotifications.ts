@@ -14,6 +14,7 @@ export interface NotificationDTO {
 const LEGACY_NOTIFICATION_STORAGE_KEY = "novel_notifications";
 const NOTIFICATION_STORAGE_KEY_PREFIX = "novel_notifications";
 const USER_NOTIFICATION_DESTINATION = "/user/queue/notifications";
+const NOTIFICATION_REFRESH_COOLDOWN_MS = 10000;
 
 export const useNotifications = () => {
   const config = useRuntimeConfig();
@@ -24,7 +25,7 @@ export const useNotifications = () => {
   const initialNotifs = ref<NotificationDTO[]>([]);
   const notifications = ref<NotificationDTO[]>([]);
   const isFetchingNotifications = ref(false);
-  let notificationPollTimer: number | null = null;
+  let lastNotificationRefreshAt = 0;
   let stompClient: Client | null = null;
 
   const getTokenSubject = (token: string) => {
@@ -151,11 +152,21 @@ export const useNotifications = () => {
     saveToLocal(notifications.value);
   };
 
-  const refreshNotifications = async () => {
+  const refreshNotifications = async (options: { force?: boolean } = {}) => {
     if (!process.client || !authToken.value || isFetchingNotifications.value) {
       return;
     }
 
+    const now = Date.now();
+    if (
+      !options.force &&
+      lastNotificationRefreshAt &&
+      now - lastNotificationRefreshAt < NOTIFICATION_REFRESH_COOLDOWN_MS
+    ) {
+      return;
+    }
+
+    lastNotificationRefreshAt = now;
     isFetchingNotifications.value = true;
     try {
       syncFromStorage();
@@ -183,7 +194,7 @@ export const useNotifications = () => {
   const toggleNotificationBox = async () => {
     isOpenNotificationBox.value = !isOpenNotificationBox.value;
     if (isOpenNotificationBox.value) {
-      await refreshNotifications();
+      await refreshNotifications({ force: true });
     }
   };
 
@@ -191,30 +202,17 @@ export const useNotifications = () => {
     isOpenNotificationBox.value = false;
   };
 
-  const startNotificationPolling = () => {
-    if (!process.client || notificationPollTimer) return;
-
-    notificationPollTimer = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        refreshNotifications();
-      }
-    }, 5000);
-  };
-
-  const stopNotificationPolling = () => {
-    if (!notificationPollTimer) return;
-    clearInterval(notificationPollTimer);
-    notificationPollTimer = null;
-  };
-
   const getWebSocketUrl = () => {
     const apiBase = String(config.public.apiBase || "");
+    if (!apiBase && import.meta.dev) {
+      return "/proxy-ws/ws";
+    }
+
     const backendUrl = new URL(apiBase || "/api", window.location.origin);
     const basePath = backendUrl.pathname.replace(/\/api\/?$/, "");
     backendUrl.protocol = backendUrl.protocol === "https:" ? "https:" : "http:";
     backendUrl.pathname = `${basePath}/ws`.replace(/\/{2,}/g, "/");
     backendUrl.search = "";
-    backendUrl.searchParams.set("access_token", authToken.value || "");
     return backendUrl.toString();
   };
 
@@ -234,6 +232,7 @@ export const useNotifications = () => {
       webSocketFactory: () =>
         new SockJS(getWebSocketUrl()) as unknown as WebSocket,
       connectHeaders: {
+        "X-Authorization": `Bearer ${authToken.value}`,
         Authorization: `Bearer ${authToken.value}`,
       },
       debug: import.meta.dev ? (message) => console.debug(message) : () => {},
@@ -260,7 +259,6 @@ export const useNotifications = () => {
         };
 
         stompClient?.subscribe(USER_NOTIFICATION_DESTINATION, handleIncoming);
-        refreshNotifications();
       },
       onStompError: (frame) => {
         if (import.meta.dev) {
@@ -318,39 +316,14 @@ export const useNotifications = () => {
     return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()} lúc ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
   };
 
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === "visible") {
-      refreshNotifications();
-    }
-  };
-
-  const handleNotificationRefresh = () => {
-    refreshNotifications();
-  };
-
   onMounted(() => {
     loadAndMergeLocal();
-    refreshNotifications();
+    refreshNotifications({ force: true });
     connectWebSocket();
-    startNotificationPolling();
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleNotificationRefresh);
-    window.addEventListener(
-      "novel:notifications-refresh",
-      handleNotificationRefresh,
-    );
   });
 
   onUnmounted(() => {
     stompClient?.deactivate();
-    stopNotificationPolling();
-    document.removeEventListener("visibilitychange", handleVisibilityChange);
-    window.removeEventListener("focus", handleNotificationRefresh);
-    window.removeEventListener(
-      "novel:notifications-refresh",
-      handleNotificationRefresh,
-    );
   });
 
   return {
