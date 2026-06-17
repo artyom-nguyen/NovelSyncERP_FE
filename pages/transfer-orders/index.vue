@@ -586,7 +586,7 @@ const canCancelTransferOrder = computed(() =>
 );
 const canLoadWarehouses = computed(() => hasAnyRole(adminManagerRoles));
 const canLoadInventoryBalances = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALE"]),
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALES"]),
 );
 
 const { data: inventoryBalances, refresh: refreshInventoryBalances } =

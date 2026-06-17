@@ -513,33 +513,36 @@
                     </div>
                     <div class="imt-popup-form">
                       <p class="txt-ct-input">
-                        Khách mua <span class="important-text">*</span>
+                        Khách hàng <span class="important-text">*</span>
                       </p>
-                      <div class="ct-form-input">
-                        <input
-                          type="text"
-                          class="text-size-14-light"
-                          v-model="formData.partnerName"
-                          placeholder="Nhập tên khách mua / đối tác"
-                        />
+                      <div class="ct-form-select">
+                        <select v-model="formData.customerId">
+                          <option value="" disabled>Chọn khách hàng</option>
+                          <option
+                            v-for="customer in customers"
+                            :key="customer.id"
+                            :value="customer.id"
+                          >
+                            {{ customer.name }}
+                          </option>
+                        </select>
+                        <span class="icon-select"
+                          ><img
+                            src="/img-fix/icon/icon-arrow-down-new.svg"
+                            alt=""
+                        /></span>
                       </div>
-                    </div>
 
-                    <div class="imt-popup-form">
-                      <p class="txt-ct-input">
-                        Số điện thoại đối tác
-                        <span class="important-text">*</span>
-                      </p>
-                      <div class="ct-form-input">
-                        <input
-                          type="tel"
-                          class="text-size-14-light"
-                          v-model="formData.partnerPhone"
-                          inputmode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Nhập số điện thoại"
-                          @input="handlePartnerPhoneInput"
-                        />
+                      <div
+                        v-if="currentCustomer"
+                        class="box-supplier-search bg-box-l-blue mt-5px"
+                      >
+                        <p class="text-size-13-light">
+                          {{ currentCustomer.code || "Chưa cập nhật mã" }}
+                        </p>
+                        <p class="text-size-13-light">
+                          {{ currentCustomer.phone || "Chưa cập nhật SĐT" }}
+                        </p>
                       </div>
                     </div>
 
@@ -1176,6 +1179,13 @@ interface Product {
   purchasePrice?: number;
 }
 
+interface Customer {
+  id: number;
+  code?: string | null;
+  name: string;
+  phone?: string | null;
+}
+
 interface InventoryBalance {
   id: number;
   quantity: number;
@@ -1219,7 +1229,7 @@ const filterFields = [
       { label: "Đơn nháp", value: "DRAFT" },
       { label: "Đã duyệt", value: "APPROVED" },
       { label: "Đang giao", value: "PROCESSING" },
-      { label: "Đã xuất kho", value: "COMPLETED" },
+      { label: "Đã giao thành công", value: "COMPLETED" },
       { label: "Đã hủy", value: "CANCELLED" },
     ],
   },
@@ -1229,7 +1239,7 @@ const salesOrderStatusLabels: Record<string, string> = {
   DRAFT: "Đơn nháp",
   APPROVED: "Đã duyệt",
   PROCESSING: "Đang giao",
-  COMPLETED: "Đã xuất kho",
+  COMPLETED: "Đã giao thành công",
   CANCELLED: "Đã hủy",
 };
 
@@ -1337,6 +1347,12 @@ const { data: products } = await useAPI<Product[]>(
     immediate: canCreateSalesOrder.value || canSimulateCampaign.value,
   },
 );
+const { data: customers } = await useAPI<Customer[]>(
+  API_ENDPOINTS.customers.listSorted,
+  {
+    immediate: canCreateSalesOrder.value,
+  },
+);
 const { data: warehouseOptions } = await useAPI<any[]>(
   API_ENDPOINTS.warehouses.list,
   {
@@ -1345,7 +1361,7 @@ const { data: warehouseOptions } = await useAPI<any[]>(
 );
 
 const canLoadInventoryBalances = computed(() =>
-  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALE"]),
+  hasAnyRole(["ROLE_ADMIN", "ROLE_MANAGER", "ROLE_SALES"]),
 );
 const { data: inventoryBalances, refresh: refreshInventoryBalances } =
   await useAPI<InventoryBalance[]>(API_ENDPOINTS.inventoryBalances.listPaged, {
@@ -1472,8 +1488,7 @@ const generateCode = () =>
 const defaultForm = () => ({
   code: generateCode(),
   warehouseId: "" as number | string,
-  partnerName: "",
-  partnerPhone: "",
+  customerId: "" as number | string,
   items: [
     {
       productId: "",
@@ -1559,23 +1574,12 @@ const getPartnerInfo = (order: SalesOrder | null): PartnerInfo => {
 };
 
 const openCreatePopup = () => {
-  const nextForm = defaultForm();
-  if (warehouses.value?.[0]?.id) {
-    nextForm.warehouseId = warehouses.value[0].id;
-  }
-  formData.value = nextForm;
+  formData.value = defaultForm();
   isCreatePopupOpen.value = true;
 };
 
 const closeCreatePopup = () => {
   isCreatePopupOpen.value = false;
-};
-
-const handlePartnerPhoneInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const phone = toDigitsOnly(target.value);
-  target.value = phone;
-  formData.value.partnerPhone = phone;
 };
 
 const currentUserName = computed(() => {
@@ -1585,6 +1589,10 @@ const currentUserName = computed(() => {
     account.value.login
   );
 });
+
+const currentCustomer = computed(() =>
+  customers.value?.find((customer) => customer.id === Number(formData.value.customerId)),
+);
 
 const inventoryByProductId = computed(() => {
   const map = new Map<number, InventoryBalance>();
@@ -1676,11 +1684,7 @@ const submitOrder = async () => {
     validateRequired(formData.value.code, "Mã đơn bán"),
     validateMaxLength(formData.value.code, 50, "Mã đơn bán"),
     validateRequired(formData.value.warehouseId, "Kho xuất"),
-    validateRequired(formData.value.partnerName, "Tên đối tác"),
-    validateMaxLength(formData.value.partnerName, 255, "Tên đối tác"),
-    validateRequired(formData.value.partnerPhone, "Số điện thoại đối tác"),
-    validateDigitsOnly(formData.value.partnerPhone, "Số điện thoại đối tác"),
-    validateMaxLength(formData.value.partnerPhone, 30, "Số điện thoại đối tác"),
+    validateRequired(formData.value.customerId, "Khách hàng"),
     validItems.length > 0 ? "" : "Vui lòng chọn ít nhất 1 sản phẩm hợp lệ!",
     invalidItem ? "Số lượng sản phẩm phải là số nguyên lớn hơn 0." : "",
     invalidPriceItem ? "Đơn giá không được nhỏ hơn 0." : "",
@@ -1706,33 +1710,15 @@ const submitOrder = async () => {
   }
 
   isSubmitting.value = true;
-  const partnerInfo = normalizePartnerInfo({
-    name: formData.value.partnerName,
-    phone: formData.value.partnerPhone,
-  });
 
   try {
-    const { data: createdCustomer, error: customerError } = await useAPI<any>(
-      API_ENDPOINTS.customers.list,
-      {
-        method: "POST",
-        body: {
-          code: generateModuleCode("customer"),
-          name: partnerInfo.name,
-          phone: partnerInfo.phone,
-          creditLimit: 0,
-          currentDebt: 0,
-        },
-      },
-    );
-
-    if (customerError.value || !createdCustomer.value?.id) {
-      throw customerError.value || new Error("Không thể tạo khách hàng.");
-    }
-
     const warehouseId = Number(formData.value.warehouseId);
     if (!warehouseId) {
       throw new Error("Chưa có kho để tạo đơn bán hàng.");
+    }
+    const customerId = Number(formData.value.customerId);
+    if (!customerId) {
+      throw new Error("Chưa chọn khách hàng để tạo đơn bán hàng.");
     }
 
     const payload = {
@@ -1740,7 +1726,7 @@ const submitOrder = async () => {
       status: "DRAFT",
       totalAmount: finalTotal.value,
       customer: {
-        id: createdCustomer.value.id,
+        id: customerId,
       },
       warehouse: {
         id: warehouseId,
@@ -1765,13 +1751,6 @@ const submitOrder = async () => {
 
     if (error.value) throw error.value;
 
-    savePartnerInfo(
-      {
-        id: createdOrder.value?.id || 0,
-        code: createdOrder.value?.orderCode || formData.value.code,
-      },
-      partnerInfo,
-    );
     toast.fromMessage("Tạo đơn bán hàng nháp thành công!");
     closeCreatePopup();
     await refreshOrders();

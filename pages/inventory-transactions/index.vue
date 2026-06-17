@@ -99,119 +99,107 @@
                       </p>
                     </div>
 
-                    <div
-                      v-for="transaction in filteredTransactions"
-                      v-else
-                      :key="transaction.id"
-                      class="tr-table tr-vertical-middle"
-                    >
-                      <div class="imt-content-table">
-                        <p class="txt-content-table">
-                          {{ transaction.id }}
-                        </p>
-                      </div>
-
-                      <div class="imt-content-table">
-                        <p class="txt-content-table">
-                          {{ formatDateTime(transaction.createdDate) }}
-                        </p>
-                      </div>
-
-                      <div class="imt-content-table">
-                        <div class="ct-dots-6">
-                          <div
-                            class="txt-wth-dots"
-                            :class="
-                              getTransactionDotClass(
-                                transaction.type,
-                              )
-                            "
-                          >
-                            <div class="custom-status-dot"></div>
-                            <p class="txt-m-content-table">
-                              {{
-                                formatTransactionType(
-                                  transaction.type,
-                                )
-                              }}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="imt-content-table table-cell-right">
-                        <p
-                          class="txt-content-table"
-                          :class="getQuantityClass(transaction.type)"
-                        >
-                          {{ getQuantityPrefix(transaction.type)
-                          }}{{ transaction.quantity.toLocaleString("vi-VN") }}
-                        </p>
-                      </div>
-
-                      <div class="imt-content-table table-cell-right">
-                        <p class="txt-content-table">
-                          {{ formatCurrency(transaction.unitCost) }}
-                        </p>
-                      </div>
-
-                      <div class="imt-content-table">
-                        <p class="txt-content-table">
-                          {{ transaction.product?.id || "---" }}
-                        </p>
-                      </div>
-
-                      <div class="imt-content-table">
-                        <p class="txt-content-table">
-                          {{ transaction.product?.sku || "---" }}
-                        </p>
-                      </div>
-
-                      <div class="imt-content-table">
-                        <div class="product-cell">
+                    <template v-else>
+                      <div
+                        v-for="transaction in filteredTransactions"
+                        :key="transaction.id"
+                        class="tr-table tr-vertical-middle"
+                      >
+                        <div class="imt-content-table">
                           <p class="txt-content-table">
-                            {{ transaction.product?.name || "---" }}
-                          </p>
-                          <p class="product-meta">
-                            {{ formatProductAttributes(transaction.product) }}
+                            {{ transaction.id }}
                           </p>
                         </div>
-                      </div>
 
-                      <div class="imt-content-table">
-                        <component
-                          :is="
-                            getReferenceRoute(transaction) ? 'NuxtLink' : 'span'
-                          "
-                          v-bind="
-                            getReferenceRoute(transaction)
-                              ? {
-                                  to: getReferenceRoute(transaction),
-                                  class: 'reference-link',
-                                }
-                              : { class: 'txt-content-table' }
-                          "
-                        >
-                          {{ formatReference(transaction) }}
-                        </component>
-                      </div>
+                        <div class="imt-content-table">
+                          <p class="txt-content-table">
+                            {{ formatDateTime(transaction.createdDate) }}
+                          </p>
+                        </div>
 
-                      <div class="imt-content-table">
-                        <div class="ct-dots-6">
-                          <div
-                            class="txt-wth-dots"
-                            :class="
-                              'blue'
-                            "
+                        <div class="imt-content-table">
+                          <div class="ct-dots-6">
+                            <div
+                              class="txt-wth-dots"
+                              :class="getTransactionDotClass(transaction.type)"
+                            >
+                              <div class="custom-status-dot"></div>
+                              <p class="txt-m-content-table">
+                                {{ formatTransactionType(transaction.type) }}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="imt-content-table table-cell-right">
+                          <p
+                            class="txt-content-table"
+                            :class="getQuantityClass(transaction.type)"
                           >
-                            <div class="custom-status-dot"></div>
-                            <p class="txt-m-content-table">
-                              {{ transaction.warehouse?.name || "---" }}
+                            {{ getQuantityPrefix(transaction.type)
+                            }}{{ transaction.quantity.toLocaleString("vi-VN") }}
+                          </p>
+                        </div>
+
+                        <div class="imt-content-table table-cell-right">
+                          <p class="txt-content-table">
+                            {{ formatCurrency(transaction.unitCost) }}
+                          </p>
+                        </div>
+
+                        <div class="imt-content-table">
+                          <p class="txt-content-table">
+                            {{ transaction.product?.id || "---" }}
+                          </p>
+                        </div>
+
+                        <div class="imt-content-table">
+                          <p class="txt-content-table">
+                            {{ transaction.product?.sku || "---" }}
+                          </p>
+                        </div>
+
+                        <div class="imt-content-table">
+                          <div class="product-cell">
+                            <p class="txt-content-table">
+                              {{ transaction.product?.name || "---" }}
+                            </p>
+                            <p class="product-meta">
+                              {{ formatProductAttributes(transaction.product) }}
                             </p>
                           </div>
                         </div>
+
+                        <div class="imt-content-table">
+                          <component
+                            :is="
+                              getReferenceRoute(transaction) ? 'NuxtLink' : 'span'
+                            "
+                            v-bind="
+                              getReferenceRoute(transaction)
+                                ? {
+                                    to: getReferenceRoute(transaction),
+                                    class: 'reference-link',
+                                  }
+                                : { class: 'txt-content-table' }
+                            "
+                          >
+                            {{ formatReference(transaction) }}
+                          </component>
+                        </div>
+
+                        <div class="imt-content-table">
+                          <div class="ct-dots-6">
+                            <div class="txt-wth-dots blue">
+                              <div class="custom-status-dot"></div>
+                              <p class="txt-m-content-table">
+                                {{ transaction.warehouse?.name || "---" }}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -460,4 +448,3 @@ const getReferenceRoute = (transaction: InventoryTransaction) => {
   return "";
 };
 </script>
-

@@ -12,6 +12,9 @@ export const API_ENDPOINTS = {
     list: "/admin/users",
     detail: (login: string) => `/admin/users/${login}`,
   },
+  adminUserEmployees: {
+    create: "/admin/user-employees",
+  },
   authorities: {
     list: "/authorities",
   },

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="top-layout-site">
     <div class="main-layout-site">
       <div class="block-lead-view">
@@ -235,6 +235,7 @@
                       />
                     </div>
                   </div>
+                  <template v-if="!isEditMode">
                   <div class="imt-bm-form">
                     <p class="txt-ct-input">Hạn mức nợ</p>
                     <div class="ct-form-input">
@@ -246,17 +247,7 @@
                       />
                     </div>
                   </div>
-                  <div class="imt-bm-form">
-                    <p class="txt-ct-input">Công nợ hiện tại</p>
-                    <div class="ct-form-input">
-                      <input
-                        v-model.number="formData.currentDebt"
-                        type="number"
-                        min="0"
-                        placeholder="Nhập công nợ hiện tại"
-                      />
-                    </div>
-                  </div>
+                  </template>
                 </div>
               </div>
             </div>
@@ -433,7 +424,6 @@ const handleSubmitCustomer = async () => {
     name: formData.value.name.trim(),
     phone: trimOrNull(formData.value.phone),
     creditLimit: formData.value.creditLimit,
-    currentDebt: formData.value.currentDebt,
     ...(isEditMode.value ? { id: formData.value.id } : {}),
   };
 

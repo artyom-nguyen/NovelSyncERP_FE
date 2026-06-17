@@ -97,6 +97,109 @@
             </div>
 
             <template v-else>
+              <div class="reports-chart-board">
+                <div class="panel-head compact">
+                  <div>
+                    <p class="text-size-13-medium">{{ chartTitle }}</p>
+                    <p class="text-size-12-light text-gray-99a">
+                      {{ chartSubtitle }}
+                    </p>
+                  </div>
+                  <div v-if="trendRows.length" class="chart-legend">
+                    <span><i class="revenue"></i>Doanh thu</span>
+                    <span><i class="profit"></i>Lợi nhuận</span>
+                  </div>
+                </div>
+
+                <div v-if="trendRows.length" class="reports-line-chart">
+                  <svg
+                    :viewBox="`0 0 ${chartWidth} ${chartHeight}`"
+                    role="img"
+                    aria-label="Biểu đồ xu hướng doanh thu và lợi nhuận"
+                  >
+                    <g class="chart-grid">
+                      <line
+                        v-for="line in chartGridLines"
+                        :key="line.y"
+                        :x1="chartPadding.left"
+                        :x2="chartWidth - chartPadding.right"
+                        :y1="line.y"
+                        :y2="line.y"
+                      />
+                    </g>
+                    <g class="chart-axis-labels">
+                      <text
+                        v-for="line in chartGridLines"
+                        :key="`label-${line.y}`"
+                        :x="chartPadding.left - 10"
+                        :y="line.y + 4"
+                        text-anchor="end"
+                      >
+                        {{ line.label }}
+                      </text>
+                    </g>
+                    <polyline
+                      class="chart-line revenue"
+                      :points="revenueLinePoints"
+                    />
+                    <polyline
+                      class="chart-line profit"
+                      :points="profitLinePoints"
+                    />
+                    <g
+                      v-for="point in trendChartPoints"
+                      :key="`${point.type}-${point.label}`"
+                    >
+                      <circle
+                        :class="['chart-dot', point.type]"
+                        :cx="point.x"
+                        :cy="point.y"
+                        r="4"
+                      />
+                    </g>
+                    <g class="chart-x-labels">
+                      <text
+                        v-for="label in chartXAxisLabels"
+                        :key="label.label"
+                        :x="label.x"
+                        :y="chartHeight - 14"
+                        text-anchor="middle"
+                      >
+                        {{ label.label }}
+                      </text>
+                    </g>
+                  </svg>
+                </div>
+
+                <div
+                  v-else-if="topProductChartRows.length"
+                  class="reports-product-chart"
+                >
+                  <div
+                    v-for="product in topProductChartRows"
+                    :key="product.productId"
+                    class="product-chart-row"
+                  >
+                    <p class="product-chart-label">{{ product.productName }}</p>
+                    <div class="product-chart-track">
+                      <div
+                        class="product-chart-bar"
+                        :style="{ width: `${product.percent}%` }"
+                      ></div>
+                    </div>
+                    <p class="product-chart-value">
+                      {{ formatShortCurrency(product.profitBrought) }}
+                    </p>
+                  </div>
+                </div>
+
+                <div v-else class="reports-empty">
+                  <p class="text-size-13-rgl">
+                    Chưa có dữ liệu để vẽ biểu đồ.
+                  </p>
+                </div>
+              </div>
+
               <div class="reports-summary">
                 <div class="reports-metric">
                   <p class="title">Tổng doanh thu</p>
@@ -285,21 +388,44 @@ const warehouses = computed(() => warehousesData.value || []);
 const monthOptions = Array.from({ length: 12 }, (_, index) => index + 1);
 const currentDate = new Date();
 const currentYear = currentDate.getFullYear();
-const currentMonth = currentDate.getMonth() + 1;
 const pad2 = (value: number) => String(value).padStart(2, "0");
+const getMonthEndDate = (year: number, month: number) =>
+  `${year}-${pad2(month)}-${pad2(new Date(year, month, 0).getDate())}`;
+const getExportRangeFromReportFilters = () => {
+  const year = Number(reportFilters.value.year || currentYear);
+  const month = reportFilters.value.month
+    ? Number(reportFilters.value.month)
+    : null;
+
+  if (month) {
+    return {
+      startDate: `${year}-${pad2(month)}-01`,
+      endDate: getMonthEndDate(year, month),
+    };
+  }
+
+  return {
+    startDate: `${year}-01-01`,
+    endDate: `${year}-12-31`,
+  };
+};
 
 const reportFilters = ref({
   warehouseId: "" as number | string,
   year: currentYear,
   month: "" as number | string,
 });
-const exportFilters = ref({
-  startDate: `${currentYear}-${pad2(currentMonth)}-01`,
-  endDate: new Date(currentYear, currentMonth, 0).toISOString().slice(0, 10),
-});
+const exportFilters = ref(getExportRangeFromReportFilters());
 const reportData = ref<DashboardResponse | null>(null);
 const isLoadingReport = ref(false);
 const isExportingReport = ref(false);
+
+watch(
+  () => [reportFilters.value.year, reportFilters.value.month],
+  () => {
+    exportFilters.value = getExportRangeFromReportFilters();
+  },
+);
 
 const authHeaders = (): Record<string, string> => {
   if (process.client) {
@@ -422,6 +548,91 @@ const maxTrendValue = computed(() =>
 );
 const getTrendPercent = (value: MoneyValue) =>
   Math.max(3, Math.round((toNumber(value) / maxTrendValue.value) * 100));
+
+const chartWidth = 960;
+const chartHeight = 280;
+const chartPadding = {
+  top: 22,
+  right: 28,
+  bottom: 44,
+  left: 72,
+};
+const chartPlotWidth = chartWidth - chartPadding.left - chartPadding.right;
+const chartPlotHeight = chartHeight - chartPadding.top - chartPadding.bottom;
+const chartMaxValue = computed(() => maxTrendValue.value);
+const chartTitle = computed(() =>
+  trendRows.value.length
+    ? "Biểu đồ xu hướng kinh doanh"
+    : "Biểu đồ top sản phẩm theo lợi nhuận",
+);
+const chartSubtitle = computed(() =>
+  trendRows.value.length
+    ? "So sánh doanh thu và lợi nhuận theo từng mốc thời gian"
+    : "Hiển thị nhanh các sản phẩm đóng góp lợi nhuận cao nhất",
+);
+const getChartX = (index: number) => {
+  if (trendRows.value.length <= 1) {
+    return chartPadding.left + chartPlotWidth / 2;
+  }
+  return (
+    chartPadding.left +
+    (chartPlotWidth / (trendRows.value.length - 1)) * index
+  );
+};
+const getChartY = (value: MoneyValue) =>
+  chartPadding.top +
+  chartPlotHeight -
+  (toNumber(value) / chartMaxValue.value) * chartPlotHeight;
+const buildTrendLinePoints = (key: "revenue" | "profit") =>
+  trendRows.value
+    .map((row, index) => `${getChartX(index)},${getChartY(row[key])}`)
+    .join(" ");
+const revenueLinePoints = computed(() => buildTrendLinePoints("revenue"));
+const profitLinePoints = computed(() => buildTrendLinePoints("profit"));
+const chartGridLines = computed(() =>
+  [1, 0.75, 0.5, 0.25, 0].map((ratio) => {
+    const value = chartMaxValue.value * ratio;
+    return {
+      y: chartPadding.top + (1 - ratio) * chartPlotHeight,
+      label: formatShortCurrency(value),
+    };
+  }),
+);
+const chartXAxisLabels = computed(() =>
+  trendRows.value.map((row, index) => ({
+    label: row.timeLabel,
+    x: getChartX(index),
+  })),
+);
+const trendChartPoints = computed(() =>
+  trendRows.value.flatMap((row, index) => [
+    {
+      type: "revenue",
+      label: row.timeLabel,
+      x: getChartX(index),
+      y: getChartY(row.revenue),
+    },
+    {
+      type: "profit",
+      label: row.timeLabel,
+      x: getChartX(index),
+      y: getChartY(row.profit),
+    },
+  ]),
+);
+const topProductChartRows = computed(() => {
+  const maxProfit = Math.max(
+    ...topProducts.value.map((product) => toNumber(product.profitBrought)),
+    1,
+  );
+  return topProducts.value.map((product) => ({
+    ...product,
+    percent: Math.max(
+      4,
+      Math.round((toNumber(product.profitBrought) / maxProfit) * 100),
+    ),
+  }));
+});
 
 const formatNumber = (value: number | null | undefined) =>
   Number(value || 0).toLocaleString("vi-VN");

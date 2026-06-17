@@ -340,6 +340,67 @@
                       </span>
                     </div>
                   </div>
+
+                  <template v-if="!isEditMode && requiresEmployeeProfile">
+                    <div class="imt-bm-form">
+                      <p class="txt-ct-input">Số điện thoại nhân viên</p>
+                      <div class="ct-form-input">
+                        <input
+                          v-model="formData.phone"
+                          type="tel"
+                          inputmode="numeric"
+                          pattern="[0-9]*"
+                          maxlength="20"
+                          placeholder="Nhập số điện thoại"
+                          @input="handlePhoneInput"
+                        />
+                      </div>
+                    </div>
+
+                    <div v-if="requiresDepartment" class="imt-bm-form">
+                      <p class="txt-ct-input">Phòng ban</p>
+                      <div class="ct-form-select">
+                        <select v-model="formData.departmentId">
+                          <option value="">Chưa chọn</option>
+                          <option
+                            v-for="department in departments"
+                            :key="department.id"
+                            :value="department.id"
+                          >
+                            {{ department.name }}
+                          </option>
+                        </select>
+                        <span class="icon-select">
+                          <img
+                            src="/img-fix/icon/icon-arrow-down-new.svg"
+                            alt=""
+                          />
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="imt-bm-form">
+                      <p class="txt-ct-input">Chi nhánh/Kho phụ trách</p>
+                      <div class="ct-form-select">
+                        <select v-model="formData.scopedWarehouseId">
+                          <option value="">Chưa chọn</option>
+                          <option
+                            v-for="warehouse in warehouses"
+                            :key="warehouse.id"
+                            :value="warehouse.id"
+                          >
+                            {{ warehouse.name }}
+                          </option>
+                        </select>
+                        <span class="icon-select">
+                          <img
+                            src="/img-fix/icon/icon-arrow-down-new.svg"
+                            alt=""
+                          />
+                        </span>
+                      </div>
+                    </div>
+                  </template>
                 </div>
               </div>
             </div>
@@ -409,6 +470,15 @@ interface UserFormPayload {
   authority: string;
   activated: boolean;
   langKey: string;
+  phone: string;
+  departmentId: number | string;
+  scopedWarehouseId: number | string;
+}
+
+interface SimpleRef {
+  id: number;
+  name?: string;
+  code?: string;
 }
 
 const isPopupOpen = ref(false);
@@ -430,9 +500,9 @@ const { data: authorities } = await useAPI<string[]>(
 );
 
 const roleOptions = computed(() => {
-  const names = authorities.value?.length
-    ? authorities.value
-    : fallbackAuthorityNames;
+  const names = [
+    ...new Set([...(authorities.value || []), ...fallbackAuthorityNames]),
+  ];
 
   return names.map((value) => ({
     label: formatRole(value),
@@ -468,12 +538,24 @@ const defaultForm: UserFormPayload = {
   authority: "ROLE_USER",
   activated: false,
   langKey: "en",
+  phone: "",
+  departmentId: "",
+  scopedWarehouseId: "",
 };
 const formData = ref<UserFormPayload>({ ...defaultForm });
 
 const { data: users, refresh: refreshUsers } = await useAPI<User[]>(
   API_ENDPOINTS.adminUsers.list,
 );
+const { data: departmentsData } = await useAPI<SimpleRef[]>(
+  API_ENDPOINTS.departments.listSorted,
+);
+const { data: warehousesData } = await useAPI<SimpleRef[]>(
+  API_ENDPOINTS.warehouses.listSorted,
+);
+
+const departments = computed(() => departmentsData.value || []);
+const warehouses = computed(() => warehousesData.value || []);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -539,6 +621,9 @@ const openEditPopup = (user: User) => {
         : "ROLE_USER",
     activated: user.activated,
     langKey: user.langKey || "en",
+    phone: "",
+    departmentId: "",
+    scopedWarehouseId: "",
   };
   openActionId.value = null;
   isPopupOpen.value = true;
@@ -549,6 +634,38 @@ const closePopup = () => {
   formData.value = { ...defaultForm };
 };
 
+const departmentRequiredRoles = [
+  "ROLE_MANAGER",
+  "ROLE_SALES",
+  "ROLE_PURCHASER",
+  "ROLE_WAREHOUSE",
+];
+const warehouseRequiredRoles = [...departmentRequiredRoles, "ROLE_SHIPPER"];
+
+const requiresDepartment = computed(() =>
+  departmentRequiredRoles.includes(formData.value.authority),
+);
+const requiresWarehouse = computed(() =>
+  warehouseRequiredRoles.includes(formData.value.authority),
+);
+const requiresEmployeeProfile = computed(
+  () => requiresDepartment.value || requiresWarehouse.value,
+);
+
+const handlePhoneInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const phone = toDigitsOnly(target.value);
+  target.value = phone;
+  formData.value.phone = phone;
+};
+
+const trimOrNull = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed || null;
+};
+
+const idOrNull = (id: number | string) => (id ? Number(id) : null);
+
 const handleSubmitUser = async () => {
   const validationError = firstValidationError([
     validateLogin(formData.value.login),
@@ -557,6 +674,14 @@ const handleSubmitUser = async () => {
     validateRequired(formData.value.email, "Email"),
     validateEmail(formData.value.email),
     validateMinMaxLength(formData.value.langKey, 2, 10, "Mã ngôn ngữ"),
+    validateDigitsOnly(formData.value.phone, "Số điện thoại nhân viên"),
+    validateMaxLength(formData.value.phone, 20, "Số điện thoại nhân viên"),
+    !isEditMode.value && requiresDepartment.value
+      ? validateRequired(formData.value.departmentId, "Phòng ban")
+      : false,
+    !isEditMode.value && requiresWarehouse.value
+      ? validateRequired(formData.value.scopedWarehouseId, "Chi nhánh/Kho phụ trách")
+      : false,
   ]);
 
   if (validationError) {
@@ -580,12 +705,28 @@ const handleSubmitUser = async () => {
     payload.id = formData.value.id;
   }
 
-  const apiUrl = API_ENDPOINTS.adminUsers.list;
+  const employeeFullName =
+    `${payload.lastName || ""} ${payload.firstName || ""}`.trim() ||
+    payload.login;
+
+  const createPayload = {
+    user: payload,
+    employee: {
+      fullName: employeeFullName,
+      phone: trimOrNull(formData.value.phone),
+      departmentId: idOrNull(formData.value.departmentId),
+      scopedWarehouseId: idOrNull(formData.value.scopedWarehouseId),
+    },
+  };
+
+  const apiUrl = isEditMode.value
+    ? API_ENDPOINTS.adminUsers.list
+    : API_ENDPOINTS.adminUserEmployees.create;
   const apiMethod = isEditMode.value ? "PUT" : "POST";
 
   const { error: submitError } = await useAPI(apiUrl, {
     method: apiMethod,
-    body: payload,
+    body: isEditMode.value ? payload : createPayload,
   });
 
   if (submitError.value) {

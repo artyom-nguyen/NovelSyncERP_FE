@@ -241,17 +241,6 @@
                     </div>
                   </div>
 
-                  <div class="imt-bm-form">
-                    <p class="txt-ct-input">Công nợ hiện tại</p>
-                    <div class="ct-form-input">
-                      <input
-                        type="number"
-                        v-model="formData.currentDebt"
-                        min="0"
-                        placeholder="0"
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -412,7 +401,6 @@ const handleSubmitSupplier = async () => {
     validateMaxLength(formData.value.name, 255, "Tên nhà cung cấp"),
     validateDigitsOnly(formData.value.phone, "Số điện thoại"),
     validateMaxLength(formData.value.phone, 30, "Số điện thoại"),
-    validateNonNegativeNumber(formData.value.currentDebt || 0, "Công nợ hiện tại"),
   ]);
 
   if (validationError) {
@@ -426,11 +414,11 @@ const handleSubmitSupplier = async () => {
     code: formData.value.code.trim(),
     name: formData.value.name.trim(),
     phone: formData.value.phone.trim(),
-    currentDebt: Number(formData.value.currentDebt) || 0,
   };
 
   if (isEditMode.value) {
     payload.id = formData.value.id;
+    payload.currentDebt = Number(formData.value.currentDebt) || 0;
   }
 
   const apiUrl = isEditMode.value
@@ -496,4 +484,3 @@ const formatCurrency = (amount: number | null | undefined) => {
   }).format(amount || 0);
 };
 </script>
-

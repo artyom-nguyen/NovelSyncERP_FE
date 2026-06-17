@@ -3933,6 +3933,140 @@ form {
   font-weight: 700;
 }
 
+.reports-chart-board {
+  border: 1px solid #edf0f5;
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #667085;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.chart-legend i.revenue {
+  background: #2563eb;
+}
+
+.chart-legend i.profit {
+  background: #16a34a;
+}
+
+.reports-line-chart {
+  width: 100%;
+  min-height: 280px;
+  overflow-x: auto;
+}
+
+.reports-line-chart svg {
+  width: 100%;
+  min-width: 720px;
+  height: 280px;
+  display: block;
+}
+
+.chart-grid line {
+  stroke: #e5eaf1;
+  stroke-width: 1;
+}
+
+.chart-axis-labels text,
+.chart-x-labels text {
+  fill: #667085;
+  font-size: 12px;
+}
+
+.chart-line {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-line.revenue {
+  stroke: #2563eb;
+}
+
+.chart-line.profit {
+  stroke: #16a34a;
+}
+
+.chart-dot {
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.chart-dot.revenue {
+  fill: #2563eb;
+}
+
+.chart-dot.profit {
+  fill: #16a34a;
+}
+
+.reports-product-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-chart-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 240px) minmax(0, 1fr) 96px;
+  gap: 12px;
+  align-items: center;
+}
+
+.product-chart-label {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-chart-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #edf2f7;
+  overflow: hidden;
+}
+
+.product-chart-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb 0%, #16a34a 100%);
+}
+
+.product-chart-value {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .reports-section {
   border-top: 1px solid #edf0f5;
   padding-top: 18px;
@@ -4075,8 +4209,17 @@ form {
   .reports-filter-row,
   .reports-summary,
   .reports-table-row,
+  .product-chart-row,
   .trend-row {
     grid-template-columns: 1fr;
+  }
+
+  .chart-legend {
+    align-self: flex-start;
+  }
+
+  .product-chart-value {
+    text-align: left;
   }
 
   .reports-heading {

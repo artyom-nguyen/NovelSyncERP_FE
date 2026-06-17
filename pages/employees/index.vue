@@ -5,7 +5,7 @@
         <div class="main-tab">
           <div class="block-utility-topbar">
             <div class="lst-utility-wrapper">
-              <div class="item-utility-topbar">
+              <div v-if="false" class="item-utility-topbar">
                 <a
                   href="javascript:;"
                   class="icon-item-utility wth-tooltip"
@@ -190,7 +190,7 @@
             <div class="main-popup-content">
               <div class="block-update-contract">
                 <div class="form-bm-popup">
-                  <div class="imt-bm-form">
+                  <div v-if="!isEditMode" class="imt-bm-form">
                     <p class="txt-ct-input">Họ tên</p>
                     <div class="ct-form-input">
                       <input
@@ -215,7 +215,7 @@
                       />
                     </div>
                   </div>
-                  <div class="imt-bm-form">
+                  <div v-if="!isEditMode" class="imt-bm-form">
                     <p class="txt-ct-input">Tài khoản</p>
                     <div class="ct-form-select">
                       <select v-model="formData.userId">
