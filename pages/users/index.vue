@@ -41,15 +41,16 @@
                 <div class="icon-search">
                   <img src="/img-fix/icon/icon-topbar-search.svg" alt="" />
                 </div>
-                <input v-model="searchQuery" type="text" placeholder="Tìm kiếm" />
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="Tìm kiếm"
+                />
               </div>
             </div>
           </div>
 
-          <div
-            v-if="filteredUsers.length > 0"
-            class="block-main-table-content"
-          >
+          <div v-if="filteredUsers.length > 0" class="block-main-table-content">
             <div class="box-table-2025">
               <div class="group-table-web">
                 <div class="block-table-crm-kh ct-xs-column">
@@ -62,9 +63,6 @@
                     </div>
                     <div class="imt-title-table">
                       <p class="txt-title-table">Email</p>
-                    </div>
-                    <div class="imt-title-table">
-                      <p class="txt-title-table">SĐT</p>
                     </div>
                     <div class="imt-title-table">
                       <p class="txt-title-table">Ngày tạo</p>
@@ -101,11 +99,6 @@
                       </div>
                       <div class="imt-content-table">
                         <p class="txt-content-table">
-                          {{ user.phone || "---" }}
-                        </p>
-                      </div>
-                      <div class="imt-content-table">
-                        <p class="txt-content-table">
                           {{ formatDate(user.createdDate) }}
                         </p>
                       </div>
@@ -125,7 +118,10 @@
                         </div>
                       </div>
                       <div class="imt-content-table">
-                        <div class="ct-dots-6" v-if="getUserStatus(user) === 'ACTIVE'">
+                        <div
+                          class="ct-dots-6"
+                          v-if="getUserStatus(user) === 'ACTIVE'"
+                        >
                           <div class="txt-wth-dots blue">
                             <div class="custom-status-dot"></div>
                             <p class="txt-m-content-table">Hoạt động</p>
@@ -302,28 +298,10 @@
                     </div>
                   </div>
 
-                  <div class="imt-bm-form">
-                    <p class="txt-ct-input">Số điện thoại</p>
-                    <div class="ct-form-input">
-                      <input
-                        type="tel"
-                        v-model="formData.phone"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        maxlength="15"
-                        placeholder="Nhập số điện thoại"
-                        @input="handlePhoneInput"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="imt-bm-form">
+                  <div v-if="isEditMode" class="imt-bm-form">
                     <p class="txt-ct-input">Trạng thái</p>
                     <div class="ct-form-select">
-                      <select
-                        v-model="formData.status"
-                        :disabled="!isEditMode"
-                      >
+                      <select v-model="formData.status">
                         <option value="ACTIVE">Hoạt động</option>
                         <option value="PENDING">Chờ kích hoạt</option>
                       </select>
@@ -335,14 +313,17 @@
                       </span>
                     </div>
                   </div>
+                  <div v-else class="imt-bm-form">
+                    <p class="txt-ct-input">Trạng thái</p>
+                    <div class="ct-form-input">
+                      <input type="text" value="Chờ duyệt" disabled />
+                    </div>
+                  </div>
 
                   <div class="imt-bm-form">
                     <p class="txt-ct-input">Phân quyền</p>
                     <div class="ct-form-select">
-                      <select
-                        v-model="formData.authority"
-                        :disabled="!isEditMode"
-                      >
+                      <select v-model="formData.authority">
                         <option
                           v-for="role in roleOptions"
                           :key="role.value"
@@ -351,6 +332,12 @@
                           {{ role.label }}
                         </option>
                       </select>
+                      <span class="icon-select">
+                        <img
+                          src="/img-fix/icon/icon-arrow-down-new.svg"
+                          alt=""
+                        />
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -402,7 +389,6 @@ interface User {
   firstName: string | null;
   lastName: string | null;
   email: string;
-  phone: string | null;
   status: string;
   activated: boolean;
   langKey: string;
@@ -419,7 +405,6 @@ interface UserFormPayload {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
   status: string;
   authority: string;
   activated: boolean;
@@ -479,7 +464,6 @@ const defaultForm: UserFormPayload = {
   firstName: "",
   lastName: "",
   email: "",
-  phone: "",
   status: "ACTIVE",
   authority: "ROLE_USER",
   activated: false,
@@ -487,8 +471,9 @@ const defaultForm: UserFormPayload = {
 };
 const formData = ref<UserFormPayload>({ ...defaultForm });
 
-const { data: users, refresh: refreshUsers } =
-  await useAPI<User[]>(API_ENDPOINTS.adminUsers.list);
+const { data: users, refresh: refreshUsers } = await useAPI<User[]>(
+  API_ENDPOINTS.adminUsers.list,
+);
 
 const normalizeText = (value: unknown) =>
   String(value || "")
@@ -512,7 +497,6 @@ const filteredUsers = computed(() => {
         user.login,
         getFullName(user.lastName, user.firstName),
         user.email,
-        user.phone,
         getUserStatus(user),
         ...(user.authorities || []),
         ...(user.authorities || []).map(formatRole),
@@ -548,7 +532,6 @@ const openEditPopup = (user: User) => {
     firstName: user.firstName || "",
     lastName: user.lastName || "",
     email: user.email,
-    phone: user.phone || "",
     status: getUserStatus(user),
     authority:
       user.authorities && user.authorities.length > 0
@@ -566,13 +549,6 @@ const closePopup = () => {
   formData.value = { ...defaultForm };
 };
 
-const handlePhoneInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const phone = toDigitsOnly(target.value);
-  target.value = phone;
-  formData.value.phone = phone;
-};
-
 const handleSubmitUser = async () => {
   const validationError = firstValidationError([
     validateLogin(formData.value.login),
@@ -580,8 +556,6 @@ const handleSubmitUser = async () => {
     validateMaxLength(formData.value.lastName, 50, "Họ"),
     validateRequired(formData.value.email, "Email"),
     validateEmail(formData.value.email),
-    validateDigitsOnly(formData.value.phone, "Số điện thoại"),
-    validateMaxLength(formData.value.phone, 15, "Số điện thoại"),
     validateMinMaxLength(formData.value.langKey, 2, 10, "Mã ngôn ngữ"),
   ]);
 
@@ -597,8 +571,7 @@ const handleSubmitUser = async () => {
     firstName: formData.value.firstName.trim(),
     lastName: formData.value.lastName.trim(),
     email: formData.value.email.trim(),
-    phone: formData.value.phone.trim(),
-    activated: formData.value.status === "ACTIVE",
+    activated: isEditMode.value ? formData.value.status === "ACTIVE" : true,
     langKey: formData.value.langKey,
     authorities: [formData.value.authority],
   };
@@ -663,9 +636,12 @@ const handleDeleteUser = async (login: string) => {
   );
   if (!isConfirm) return;
 
-  const { error: deleteError } = await useAPI(API_ENDPOINTS.adminUsers.detail(login), {
-    method: "DELETE",
-  });
+  const { error: deleteError } = await useAPI(
+    API_ENDPOINTS.adminUsers.detail(login),
+    {
+      method: "DELETE",
+    },
+  );
 
   if (deleteError.value) {
     toast.fromMessage(getDeleteUserErrorMessage(login, deleteError.value));
@@ -693,6 +669,4 @@ const formatDate = (dateStr: string | null) => {
     year: "numeric",
   }).format(date);
 };
-
 </script>
-

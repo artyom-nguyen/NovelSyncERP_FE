@@ -205,12 +205,13 @@ export const useNotifications = () => {
   const getWebSocketUrl = () => {
     const apiBase = String(config.public.apiBase || "");
     if (!apiBase && import.meta.dev) {
-      return "/proxy-ws/ws";
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      return `${protocol}//${window.location.host}/proxy-ws/ws`;
     }
 
     const backendUrl = new URL(apiBase || "/api", window.location.origin);
     const basePath = backendUrl.pathname.replace(/\/api\/?$/, "");
-    backendUrl.protocol = backendUrl.protocol === "https:" ? "https:" : "http:";
+    backendUrl.protocol = backendUrl.protocol === "https:" ? "wss:" : "ws:";
     backendUrl.pathname = `${basePath}/ws`.replace(/\/{2,}/g, "/");
     backendUrl.search = "";
     return backendUrl.toString();
@@ -226,11 +227,8 @@ export const useNotifications = () => {
     syncFromStorage();
     if (!authToken.value || stompClient?.active) return;
 
-    const { default: SockJS } = await import("sockjs-client");
-
     stompClient = new Client({
-      webSocketFactory: () =>
-        new SockJS(getWebSocketUrl()) as unknown as WebSocket,
+      brokerURL: getWebSocketUrl(),
       connectHeaders: {
         "X-Authorization": `Bearer ${authToken.value}`,
         Authorization: `Bearer ${authToken.value}`,

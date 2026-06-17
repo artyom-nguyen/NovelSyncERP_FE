@@ -63,21 +63,6 @@
               </div>
 
               <div class="ct-input">
-                <label class="txt-login-content">Số điện thoại</label>
-                <div class="item-choose-filter">
-                  <input
-                    v-model.trim="form.phone"
-                    type="tel"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    maxlength="15"
-                    placeholder="Nhập số điện thoại"
-                    @input="handlePhoneInput"
-                  />
-                </div>
-              </div>
-
-              <div class="ct-input">
                 <label class="txt-login-content">Mật khẩu</label>
                 <div class="item-choose-filter">
                   <input
@@ -178,7 +163,6 @@ const form = ref({
   email: "",
   firstName: "",
   lastName: "",
-  phone: "",
   password: "",
 });
 const confirmPassword = ref("");
@@ -202,8 +186,6 @@ const validateForm = () => {
     validateRequired(form.value.email, "Email"),
     validateEmail(form.value.email),
     validatePasswordLength(form.value.password),
-    validateDigitsOnly(form.value.phone, "Số điện thoại"),
-    validateMaxLength(form.value.phone, 15, "Số điện thoại"),
   ]);
 
   if (validationError) return validationError;
@@ -232,10 +214,6 @@ const validateForm = () => {
     return "Mật khẩu xác nhận không khớp.";
   }
 
-  if (form.value.phone && form.value.phone.length > 15) {
-    return "Số điện thoại không được vượt quá 15 ký tự.";
-  }
-
   if (!accepted.value) {
     return "Vui lòng đồng ý với điều khoản sử dụng.";
   }
@@ -261,13 +239,6 @@ const getRegisterErrorMessage = (error: any) => {
   );
 };
 
-const handlePhoneInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const phone = toDigitsOnly(target.value);
-  target.value = phone;
-  form.value.phone = phone;
-};
-
 const handleRegister = async () => {
   errorMessage.value = validateForm();
   if (errorMessage.value) return;
@@ -282,7 +253,6 @@ const handleRegister = async () => {
         email: form.value.email.trim(),
         firstName: form.value.firstName.trim(),
         lastName: form.value.lastName.trim(),
-        phone: form.value.phone.trim(),
         password: form.value.password,
         langKey: "en",
       },
